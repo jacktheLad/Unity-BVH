@@ -197,7 +197,45 @@ namespace sif
 
         private ObjectSplit FindObjectSplit(NodeSpec spec, float nodeSAH)
         {
-            throw new NotImplementedException();
+            ObjectSplit split = ObjectSplit.New();
+
+            for (_sortDim = 0; _sortDim < 3; _sortDim++)
+            {
+                _refStack.Sort((ra, rb) => 
+                {
+                    // 比较当前所处维度的中点位置，根据中点位置进行排序
+                    float ca = ra.Bounds.Min[_sortDim] + ra.Bounds.Max[_sortDim];
+                    float cb = rb.Bounds.Min[_sortDim] + rb.Bounds.Max[_sortDim];
+                    return (ca < cb) ? -1 : (ca > cb) ? 1 : (ra.TriangleIdx < rb.TriangleIdx) ? -1 : (ra.TriangleIdx > rb.TriangleIdx) ? 1 : 0;
+                });
+
+                // 从右到左扩张AABB，且记录每一次扩张
+                AABB rightBounds = AABB.New();
+                int startIdx = _refStack.Count - spec.NumRef; // CreateLeaf以后_refStack发生了变化
+                for (int i = spec.NumRef - 1; i > 0; i--)
+                {
+                    rightBounds.Union(_refStack[startIdx + i].Bounds);
+                    _rightBounds[i - 1] = rightBounds; // 每一个都记录下来，后面才能比较
+                }
+
+                // 从左到右尝试分割，比较计算得到最佳SAH
+                AABB leftBounds = AABB.New();
+                for (int i = 0; i < spec.NumRef; i++)
+                {
+                    leftBounds.Union(_refStack[startIdx + i - 1].Bounds);
+                    float sah = nodeSAH + leftBounds.Area * i/*左边有i个图元*/ + _rightBounds[i - 1].Area * (spec.NumRef - i);
+                    if (sah < split.SAH)
+                    {
+                        split.SAH = sah;
+                        split.Dim = _sortDim;
+                        split.NumLeftRef = i;
+                        split.LeftBounds = leftBounds;
+                        split.RightBounds = _rightBounds[i - 1];
+                    }
+                }
+            }
+
+            return split;
         }
 
         private SpatialSplit FindSpatialSplit(NodeSpec spec, float nodeSAH)
