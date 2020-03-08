@@ -5,13 +5,10 @@ namespace sif
     using BVHTriangle = Vector3Int;
     public struct AABB
     {
-        private Vector3 _min;
-        private Vector3 _max;
+        public Vector3 Min;
+        public Vector3 Max;
 
-        public Vector3 Min { get => _min; set => _min = value; }
-        public Vector3 Max { get => _max; set => _max = value; }
-
-        private AABB(Vector3 min, Vector3 max) { _min = min; _max = max; }
+        private AABB(Vector3 min, Vector3 max) { Min = min; Max = max; }
 
         public static AABB New(Vector3 min, Vector3 max)
         {
@@ -23,12 +20,12 @@ namespace sif
             return new AABB(float.MaxValue * Vector3.one, float.MinValue * Vector3.one);
         }
 
-        public Vector3 Center => (_min + _max) * 0.5f;
+        public Vector3 Center => (Min + Max) * 0.5f;
         public float Area
         {
             get
             {
-                var box = _max - _min;
+                var box = Max - Min;
                 return (box.x * box.y + box.x * box.z + box.y * box.z) * 2f;
             }
         }
@@ -37,22 +34,22 @@ namespace sif
         {
             get
             {
-                var box = _max - _min;
+                var box = Max - Min;
                 return box.x * box.y * box.z;
             }
         }
-        public void Union(Vector3 p) { _min = Vector3.Min(_min, p); _max = Vector3.Max(_max, p); }
+        public void Union(Vector3 p) { Min = Vector3.Min(Min, p); Max = Vector3.Max(Max, p); }
         public void Union(AABB other) { Union(other.Min); Union(other.Max); }
 
         public void Intersect(AABB other)
         {
-            _min = Vector3.Max(_min, other.Min);
-            _max = Vector3.Min(_max, other.Max);
+            Min = Vector3.Max(Min, other.Min);
+            Max = Vector3.Min(Max, other.Max);
         }
 
         public bool Valid()
         {
-            var box = _max - _min;
+            var box = Max - Min;
             return box.x >= 0f && box.y >= 0f && box.z >= 0f;
         }
 
@@ -66,6 +63,16 @@ namespace sif
             AABB res = l;
             res.Union(r);
             return res;
+        }
+
+        public void SetMinByDim(int dim, float value)
+        {
+            Min[dim] = value;
+        }
+
+        public void SetMaxByDim(int dim, float value)
+        {
+            Max[dim] = value;
         }
     }
 
