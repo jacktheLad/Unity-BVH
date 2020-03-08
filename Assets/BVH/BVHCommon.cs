@@ -17,7 +17,8 @@ namespace sif
 
         public static AABB New()
         {
-            return new AABB(float.MaxValue * Vector3.one, float.MinValue * Vector3.one);
+            return new AABB(new Vector3(float.MaxValue, float.MaxValue, float.MaxValue),
+                new Vector3(float.MinValue, float.MinValue, float.MinValue));
         }
 
         public Vector3 Center => (Min + Max) * 0.5f;

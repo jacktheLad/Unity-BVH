@@ -46,6 +46,14 @@ namespace sif
         {
             public int NumRef;
             public AABB Bounds;
+
+            // 不能直接new NodeSpec，必须调用此方法，否则Bounds初始化成员都是0
+            public static NodeSpec New()
+            {
+                NodeSpec spec = new NodeSpec();
+                spec.Bounds = AABB.New();
+                return spec;
+            }
         }
 
         struct ObjectSplit
@@ -145,7 +153,7 @@ namespace sif
             var triangles = _bvhData.Scene.Triangles;
             var vetices = _bvhData.Scene.Vertices;
 
-            var rootSpec = new NodeSpec();
+            var rootSpec = NodeSpec.New();
             rootSpec.NumRef = triangles.Count;
 
             // 遍历所有图元（引用），计算根节点的包围盒
@@ -197,8 +205,8 @@ namespace sif
                 return CreatLeaf(spec);
 
             // spatial split胜出，尝试执行spatial split
-            NodeSpec left = new NodeSpec();
-            NodeSpec right = new NodeSpec();
+            NodeSpec left = NodeSpec.New();
+            NodeSpec right = NodeSpec.New();
             if (minSAH == spatialSplit.SAH)
                 PerformSpatialSplit(ref left, ref right, spec, spatialSplit);
 
@@ -342,7 +350,7 @@ namespace sif
                 if (v0p <= pos)
                     leftRef.Bounds.Union(v0);
                 if (v0p >= pos)
-                    rightRef.Bounds.Union(v1);
+                    rightRef.Bounds.Union(v0);
 
                 // 求得分割平面与三角形的交点，且算进左右两边的包围盒
                 if ((v0p < pos && v1p > pos) || (v0p > pos && v1p < pos))
