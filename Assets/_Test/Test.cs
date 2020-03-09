@@ -20,28 +20,34 @@ public class Test : MonoBehaviour
         CPU_SBVHBuilder.Build(bvhData);
         root = bvhData.Root;
     }
-    int i = 0;
-    void DrawAABB(SBVHNode node)
+
+    void DrawAABB(SBVHNode node, int seed)
     {
         if (node == null)
             return;
         Random.InitState(node.GetHashCode());
-        Gizmos.color = new Color( Random.value, Random.value, 0 ,0.5f);
+        Gizmos.color = new Color( Random.value, Random.value, Random.value, 0.3f);
 
-
-            Gizmos.DrawCube(node.Bounds.Center, node.Bounds.Max - node.Bounds.Min);
+        Gizmos.DrawCube(node.Bounds.Center , node.Bounds.Max - node.Bounds.Min);
+       // Debug.LogError(seed);
 
         if(!node.IsLeaf())
         {
-            DrawAABB(node.GetChildNode(0));
-            DrawAABB(node.GetChildNode(1));
+            DrawAABB(node.GetChildNode(0), seed + 1);
+            DrawAABB(node.GetChildNode(1), seed + 1);
         }
+    }
+
+    void DrawAABB(AABB ab)
+    {
+        Random.InitState(ab.GetHashCode());
+        Gizmos.color = new Color(Random.value, Random.value, 1, 0.5f);
+        Gizmos.DrawCube(ab.Center, ab.Max - ab.Min);
     }
 
     private void OnDrawGizmos()
     {
-        i = 0;
-        DrawAABB(root);
+        DrawAABB(root, 1);
     }
 
     // Update is called once per frame

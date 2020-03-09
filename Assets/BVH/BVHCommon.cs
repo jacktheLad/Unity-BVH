@@ -40,8 +40,9 @@ namespace sif
             }
         }
         public void Union(Vector3 p) { Min = Vector3.Min(Min, p); Max = Vector3.Max(Max, p); }
+        // 两个都无效的AABB Union会有问题
         public void Union(AABB other) { Union(other.Min); Union(other.Max); }
-
+        // 其中一个AABB为无效的会有问题
         public void Intersect(AABB other)
         {
             Min = Vector3.Max(Min, other.Min);

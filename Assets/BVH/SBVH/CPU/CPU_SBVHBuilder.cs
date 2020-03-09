@@ -187,7 +187,7 @@ namespace sif
 
             // 挑选使用object split还是spatial split
             float leafSAH = spec.Bounds.Area * spec.NumRef;
-            float nodeSAH = spec.Bounds.Area * 2; // 节点遍历的固定开销，2是个经验值（不一定是最好的）
+            float nodeSAH = spec.Bounds.Area * 0.125f;//spec.Bounds.Area * 2; // 节点遍历的固定开销，2是个经验值（不一定是最好的）
             ObjectSplit objectSplit = FindObjectSplit(spec, nodeSAH);
             SpatialSplit spatialSplit = SpatialSplit.New();
             if (depth < MAX_SPATIAL_DEPTH)
@@ -199,7 +199,7 @@ namespace sif
                     spatialSplit = FindSpatialSplit(spec, nodeSAH);
             }
 
-            // 叶节点胜出
+            // 叶节点胜出，不论是Object还是Spatial slpit，分割后的
             float minSAH = Mathf.Min(Mathf.Min(leafSAH, objectSplit.SAH), spatialSplit.SAH);
             if (minSAH == leafSAH && spec.NumRef <= MAX_LEAF_SIZE)
                 return CreatLeaf(spec);
@@ -275,14 +275,15 @@ namespace sif
             for (int refIdx = _refStack.Count - spec.NumRef; refIdx < _refStack.Count; refIdx++)
             {
                 var pRef = _refStack[refIdx];
-                var firstBin = Utils.ClampV3Int(Vector3Int.CeilToInt((pRef.Bounds.Min - origin).Multiply(invBinSize)), Vector3Int.zero, new Vector3Int(N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1));
-                var lastBin = Utils.ClampV3Int(Vector3Int.CeilToInt((pRef.Bounds.Max - origin).Multiply(invBinSize)), firstBin, new Vector3Int(N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1));
+                // ....Vector3Int.FloorToInt 误用了 celling...查半天。。。。
+                var firstBin = Utils.ClampV3Int(Vector3Int.FloorToInt((pRef.Bounds.Min - origin).Multiply(invBinSize)), Vector3Int.zero, new Vector3Int(N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1));
+                var lastBin = Utils.ClampV3Int(Vector3Int.FloorToInt((pRef.Bounds.Max - origin).Multiply(invBinSize)), firstBin, new Vector3Int(N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1));
 
                 for (int dim = 0; dim < 3; dim++)
                 {
                     var curRef = pRef;
                     // 从左到右分割,curRef并不更新图元索引，只更新包围盒
-                    for (int i = firstBin[dim]; i < lastBin[dim]; i++)
+                    for (int i = firstBin[dim]; i < lastBin[dim] ; i++)
                     {
                         PrimitiveRef leftRef, rightRef;
                         SplitReference(out leftRef, out rightRef, curRef, dim, origin[dim] + binSize[dim] * (i + 1));
@@ -330,7 +331,7 @@ namespace sif
 
             return split;
         }
-
+        static int testi = 0;
         private void SplitReference(out PrimitiveRef leftRef, out PrimitiveRef rightRef, PrimitiveRef curRef, int dim, float pos)
         {
             leftRef = rightRef = PrimitiveRef.New();
@@ -338,6 +339,11 @@ namespace sif
 
             var triangle = _bvhData.Scene.Triangles[curRef.TriangleIdx];
             var vertices = _bvhData.Scene.Vertices;
+
+            testi++;
+
+            if (testi == 9)
+                testi = 9;
 
             // 遍历三角形的三条边01,12,20,然后将顶点与分割平面组成包围盒
             for (byte i = 0; i < 3; i++)
@@ -360,14 +366,16 @@ namespace sif
                     rightRef.Bounds.Union(t);
                 }
             }
-
+            // ??:原代码里面有下面两句，暂时没设想出是什么情况
+            leftRef.Bounds.Max[dim] = pos;
+            if (leftRef.Bounds.Max[dim] == float.MinValue)
+                Debug.Log(testi);
+            if (rightRef.Bounds.Min[dim] == float.MaxValue)
+                Debug.Log(testi);
+            rightRef.Bounds.Min[dim] = pos;
             // 上面得到的是图元（三角形）被分割后左右两边的包围盒，但我们希望得到的包围盒除此之外，还应该限制在分割平面左右两个bin中
             leftRef.Bounds.Intersect(curRef.Bounds);
             rightRef.Bounds.Intersect(curRef.Bounds);
-
-            // ??:原代码里面有下面两句，暂时没设想出是什么情况
-            leftRef.Bounds.SetMaxByDim(dim, pos);
-            rightRef.Bounds.SetMinByDim(dim, pos);
         }
 
         private void PerformObjectSplit(ref NodeSpec left, ref NodeSpec right, NodeSpec spec, ObjectSplit split)
