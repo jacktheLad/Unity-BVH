@@ -25,7 +25,7 @@ public class Test : MonoBehaviour
     {
         if (node == null)
             return;
-        Random.InitState(node.GetHashCode());
+        Random.InitState(seed);
         Gizmos.color = new Color( Random.value, Random.value, Random.value, 0.3f);
 
         Gizmos.DrawCube(node.Bounds.Center , node.Bounds.Max - node.Bounds.Min);

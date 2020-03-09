@@ -185,6 +185,9 @@ namespace sif
             if (spec.NumRef <= MIN_LEAF_SIZE || depth >= MAX_DEPTH)
                 return CreatLeaf(spec);
 
+            if (spec.NumRef > 1000)
+                Debug.LogError(">1000 = " + spec.NumRef);
+
             // 挑选使用object split还是spatial split
             float leafSAH = spec.Bounds.Area * spec.NumRef;
             float nodeSAH = spec.Bounds.Area * 0.125f;//spec.Bounds.Area * 2; // 节点遍历的固定开销，2是个经验值（不一定是最好的）
@@ -216,8 +219,9 @@ namespace sif
 
             _numDuplicates += left.NumRef + right.NumRef - spec.NumRef;
 
-            var leftNode = BuildNodeRecursively(left, depth + 1);
+            // 由于后文取下标的方式，一定是先右后左
             var rightNode = BuildNodeRecursively(right, depth + 1);
+            var leftNode = BuildNodeRecursively(left, depth + 1);
 
             return new InnerSNode(spec.Bounds, leftNode, rightNode);
         }
@@ -341,9 +345,6 @@ namespace sif
             var vertices = _bvhData.Scene.Vertices;
 
             testi++;
-
-            if (testi == 9)
-                testi = 9;
 
             // 遍历三角形的三条边01,12,20,然后将顶点与分割平面组成包围盒
             for (byte i = 0; i < 3; i++)

@@ -26,6 +26,7 @@ namespace sif
         {
             get
             {
+                if (!Valid) return 0;
                 var box = Max - Min;
                 return (box.x * box.y + box.x * box.z + box.y * box.z) * 2f;
             }
@@ -49,10 +50,13 @@ namespace sif
             Max = Vector3.Min(Max, other.Max);
         }
 
-        public bool Valid()
+        public bool Valid
         {
-            var box = Max - Min;
-            return box.x >= 0f && box.y >= 0f && box.z >= 0f;
+            get
+            {
+                var box = Max - Min;
+                return box.x >= 0f && box.y >= 0f && box.z >= 0f;
+            }
         }
 
         public static AABB Union(AABB l, AABB r)
@@ -80,16 +84,13 @@ namespace sif
 
     public class BVHScene
     {
-        List<BVHTriangle> _triangles;
-        List<Vector3> _vertices;
-
-        public List<BVHTriangle> Triangles { get => _triangles; }
-        public List<Vector3> Vertices { get => _vertices; }
+        public List<BVHTriangle> Triangles;
+        public List<Vector3> Vertices;
 
         public BVHScene(List<BVHTriangle> tris, List<Vector3> verts)
         {
-            _triangles = tris;
-            _vertices = verts;
+            Triangles = tris;
+            Vertices = verts;
         }
 
     }
