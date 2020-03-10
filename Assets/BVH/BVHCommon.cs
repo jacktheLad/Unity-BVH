@@ -70,16 +70,6 @@ namespace sif
             res.Union(r);
             return res;
         }
-
-        public void SetMinByDim(int dim, float value)
-        {
-            Min[dim] = value;
-        }
-
-        public void SetMaxByDim(int dim, float value)
-        {
-            Max[dim] = value;
-        }
     }
 
     public class BVHScene

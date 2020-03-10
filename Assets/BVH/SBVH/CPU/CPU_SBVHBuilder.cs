@@ -185,9 +185,6 @@ namespace sif
             if (spec.NumRef <= MIN_LEAF_SIZE || depth >= MAX_DEPTH)
                 return CreatLeaf(spec);
 
-            if (spec.NumRef > 1000)
-                Debug.LogError(">1000 = " + spec.NumRef);
-
             // 挑选使用object split还是spatial split
             float leafSAH = spec.Bounds.Area * spec.NumRef;
             float nodeSAH = spec.Bounds.Area * 0.125f;//spec.Bounds.Area * 2; // 节点遍历的固定开销，2是个经验值（不一定是最好的）
@@ -335,7 +332,7 @@ namespace sif
 
             return split;
         }
-        static int testi = 0;
+
         private void SplitReference(out PrimitiveRef leftRef, out PrimitiveRef rightRef, PrimitiveRef curRef, int dim, float pos)
         {
             leftRef = rightRef = PrimitiveRef.New();
@@ -343,8 +340,6 @@ namespace sif
 
             var triangle = _bvhData.Scene.Triangles[curRef.TriangleIdx];
             var vertices = _bvhData.Scene.Vertices;
-
-            testi++;
 
             // 遍历三角形的三条边01,12,20,然后将顶点与分割平面组成包围盒
             for (byte i = 0; i < 3; i++)
@@ -367,12 +362,8 @@ namespace sif
                     rightRef.Bounds.Union(t);
                 }
             }
-            // ??:原代码里面有下面两句，暂时没设想出是什么情况
+
             leftRef.Bounds.Max[dim] = pos;
-            if (leftRef.Bounds.Max[dim] == float.MinValue)
-                Debug.Log(testi);
-            if (rightRef.Bounds.Min[dim] == float.MaxValue)
-                Debug.Log(testi);
             rightRef.Bounds.Min[dim] = pos;
             // 上面得到的是图元（三角形）被分割后左右两边的包围盒，但我们希望得到的包围盒除此之外，还应该限制在分割平面左右两个bin中
             leftRef.Bounds.Intersect(curRef.Bounds);

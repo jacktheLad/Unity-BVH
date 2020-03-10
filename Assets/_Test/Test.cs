@@ -4,21 +4,27 @@ using UnityEngine;
 using sif;
 using UnityEditor;
 using System.IO;
-
+using System.Diagnostics;
+using Debug = UnityEngine.Debug;
 
 public class Test : MonoBehaviour
 {
-    public static
-
+    public UnityEngine.UI.Text text;
     SBVHNode root;
     BVHScene bvhScene;
     // Start is called before the first frame update
     void Start()
     {
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
         bvhScene = BVHHelper.BuildBVHScene();
         var bvhData = new CPU_SBVHData(bvhScene);
         CPU_SBVHBuilder.Build(bvhData);
         root = bvhData.Root;
+        sw.Stop();
+        string log = "Build successfully, time: " + sw.ElapsedMilliseconds + " ms";
+        Debug.Log(log);
+        text.text = log;
     }
 
     void DrawAABB(SBVHNode node, int seed)
@@ -38,16 +44,9 @@ public class Test : MonoBehaviour
         }
     }
 
-    void DrawAABB(AABB ab)
-    {
-        Random.InitState(ab.GetHashCode());
-        Gizmos.color = new Color(Random.value, Random.value, 1, 0.5f);
-        Gizmos.DrawCube(ab.Center, ab.Max - ab.Min);
-    }
-
     private void OnDrawGizmos()
     {
-        DrawAABB(root, 1);
+        //DrawAABB(root, 1);
     }
 
     // Update is called once per frame

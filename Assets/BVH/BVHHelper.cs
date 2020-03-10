@@ -16,17 +16,23 @@ public static class BVHHelper
         foreach (var mf in meshFilters)
         {
             var mesh = mf.mesh;
-            for (int i = 0; i < mesh.vertices.Length; i++)
+            // mesh.vertices, mesh.triangles, localToWorldMatrix是属性
+            // 在一个循环数很大的for里面会产生巨大开销
+            var vertices = mesh.vertices;
+            var matWorld = mf.transform.localToWorldMatrix;
+            for (int i = 0; i < vertices.Length; i++)
             {
-                Vector3 worldPos = mf.transform.localToWorldMatrix.MultiplyPoint(mesh.vertices[i]);
+                Vector3 worldPos = matWorld.MultiplyPoint(vertices[i]);
+                //Vector3 worldPos = matWorld.MultiplyPoint(mesh.vertices[i]); // Bad idea.
                 verts.Add(worldPos);
             }
 
-            for (int i = 0; i < mesh.triangles.Length; i += 3)
+            var triangles = mesh.triangles;
+            for (int i = 0; i < triangles.Length; i += 3)
             {
-                var tri = new BVHTriangle(  vetexOffset + mesh.triangles[i],
-                                            vetexOffset + mesh.triangles[i + 1],
-                                            vetexOffset + mesh.triangles[i + 2]);
+                var tri = new BVHTriangle(  vetexOffset + triangles[i],
+                                            vetexOffset + triangles[i + 1],
+                                            vetexOffset + triangles[i + 2]);
                 tris.Add(tri);
             }
 
