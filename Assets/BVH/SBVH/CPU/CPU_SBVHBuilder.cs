@@ -11,13 +11,13 @@ namespace sif
         // 写这么长是因为C#里面值类型（struct）指定默认(非0)初始化值没有更好的方法了。
         public struct PrimitiveRef
         {
-            public int TriangleIdx;
-            public AABB Bounds;
+            public int triangleIdx;
+            public AABB bounds;
 
             private PrimitiveRef(int triIdx, AABB bounds)
             {
-                TriangleIdx = triIdx;
-                Bounds = bounds;
+                triangleIdx = triIdx;
+                this.bounds = bounds;
             }
 
             public static PrimitiveRef New()
@@ -33,9 +33,9 @@ namespace sif
             public int Compare(PrimitiveRef ra, PrimitiveRef rb)
             {
                 // 比较当前所处维度的中点位置，根据中点位置进行排序
-                float ca = ra.Bounds.Min[sortDim] + ra.Bounds.Max[sortDim];
-                float cb = rb.Bounds.Min[sortDim] + rb.Bounds.Max[sortDim];
-                return (ca < cb) ? -1 : (ca > cb) ? 1 : (ra.TriangleIdx < rb.TriangleIdx) ? -1 : (ra.TriangleIdx > rb.TriangleIdx) ? 1 : 0;
+                float ca = ra.bounds.min[sortDim] + ra.bounds.max[sortDim];
+                float cb = rb.bounds.min[sortDim] + rb.bounds.max[sortDim];
+                return (ca < cb) ? -1 : (ca > cb) ? 1 : (ra.triangleIdx < rb.triangleIdx) ? -1 : (ra.triangleIdx > rb.triangleIdx) ? 1 : 0;
             }
         }
 
@@ -44,32 +44,32 @@ namespace sif
         /// </summary>
         struct NodeSpec
         {
-            public int NumRef;
-            public AABB Bounds;
+            public int numRef;
+            public AABB bounds;
 
             // 不能直接new NodeSpec，必须调用此方法，否则Bounds初始化成员都是0
             public static NodeSpec New()
             {
                 NodeSpec spec = new NodeSpec();
-                spec.Bounds = AABB.New();
+                spec.bounds = AABB.New();
                 return spec;
             }
         }
 
         struct ObjectSplit
         {
-            public float SAH;
-            public byte Dim;
-            public int NumLeftRef;
-            public AABB LeftBounds;
-            public AABB RightBounds;
+            public float sah;
+            public byte dim;
+            public int numLeft;
+            public AABB leftBounds;
+            public AABB rightBounds;
             private ObjectSplit(int nothing)
             {
-                SAH = float.MaxValue;
-                Dim = 0;
-                NumLeftRef = 0;
-                LeftBounds = AABB.New();
-                RightBounds = AABB.New();
+                sah = float.MaxValue;
+                dim = 0;
+                numLeft = 0;
+                leftBounds = AABB.New();
+                rightBounds = AABB.New();
             }
 
             public static ObjectSplit New()
@@ -80,14 +80,14 @@ namespace sif
 
         struct SpatialSplit
         {
-            public float SAH;
-            public byte Dim;
-            public float Pos;
+            public float sah;
+            public byte dim;
+            public float pos;
             private SpatialSplit(int nothing)
             {
-                SAH = float.MaxValue;
-                Dim = 0;
-                Pos = 0f;
+                sah = float.MaxValue;
+                dim = 0;
+                pos = 0f;
             }
             public static SpatialSplit New()
             {
@@ -97,15 +97,15 @@ namespace sif
 
         struct SpatialBin
         {
-            public AABB Bounds;
-            public int Enter;
-            public int Exit;
+            public AABB bounds;
+            public int enter;
+            public int exit;
 
             private SpatialBin(int nothing)
             {
-                Bounds = AABB.New();
-                Enter = 0;
-                Exit = 0;
+                bounds = AABB.New();
+                enter = 0;
+                exit = 0;
             }
             public static SpatialBin New()
             {
@@ -120,29 +120,28 @@ namespace sif
         public static int MIN_LEAF_SIZE = 1;
         public static int MAX_LEAF_SIZE = 0x7FFFFFF;
 
-        private CPU_SBVHData _bvhData;
+        private CPU_BVHData _bvhData;
         private List<PrimitiveRef> _refStack; // A linear stack.
         private float _minOverlap;
         private List<AABB> _rightBounds;
-        private byte _sortDim;
         private SpatialBin[,] _bins = new SpatialBin[3, N_SPATIAL_BINS];
         private int _numDuplicates;
         RefComparer _refComparer = new RefComparer();
 
-        private CPU_SBVHBuilder(CPU_SBVHData bvhData)
+        private CPU_SBVHBuilder(CPU_BVHData bvhData)
         {
             _bvhData = bvhData;
             _refStack = new List<PrimitiveRef>();
             _rightBounds = new List<AABB>();
 
-            int rightBoundsCount = Mathf.Max(_bvhData.Scene.Triangles.Count, N_SPATIAL_BINS) - 1;
+            int rightBoundsCount = Mathf.Max(_bvhData.scene.triangles.Count, N_SPATIAL_BINS) - 1;
             for (int i = 0; i < rightBoundsCount; i++)
             {
                 _rightBounds.Add(AABB.New());
             }
         }
 
-        public static void Build(CPU_SBVHData bvhData)
+        public static void Build(CPU_BVHData bvhData)
         {
             var builder = new CPU_SBVHBuilder(bvhData);
             builder.Build();
@@ -150,110 +149,110 @@ namespace sif
 
         private void Build()
         {
-            var triangles = _bvhData.Scene.Triangles;
-            var vetices = _bvhData.Scene.Vertices;
+            var triangles = _bvhData.scene.triangles;
+            var vetices = _bvhData.scene.vertices;
 
             var rootSpec = NodeSpec.New();
-            rootSpec.NumRef = triangles.Count;
+            rootSpec.numRef = triangles.Count;
 
             // 遍历所有图元（引用），计算根节点的包围盒
-            for (int i = 0; i < rootSpec.NumRef; i++)
+            for (int i = 0; i < rootSpec.numRef; i++)
             {
                 var pRef = PrimitiveRef.New();
-                pRef.TriangleIdx = i;
+                pRef.triangleIdx = i;
 
                 // 计算单个图元的包围盒
                 for (int j = 0; j < 3; j++)
-                    pRef.Bounds.Union(vetices[triangles[i][j]]);
+                    pRef.bounds.Union(vetices[triangles[i][j]]);
 
-                rootSpec.Bounds.Union(pRef.Bounds);
+                rootSpec.bounds.Union(pRef.bounds);
 
                 _refStack.Add(pRef);
             }
 
             // 最小重叠面积，只有重叠面积大于这个值时才考虑进行spatial split
-            _minOverlap = rootSpec.Bounds.Area * SPLIT_ALPHA;
+            _minOverlap = rootSpec.bounds.Area * SPLIT_ALPHA;
 
             // 递归创建BVH
-            _bvhData.Root = BuildNodeRecursively(rootSpec, 0);
+            _bvhData.root = BuildNodeRecursively(rootSpec, 0);
             Debug.Log("Build Completely.");
         }
 
-        private SBVHNode BuildNodeRecursively(NodeSpec spec, int depth)
+        private BVHNode BuildNodeRecursively(NodeSpec spec, int depth)
         {
             // 节点只有一个图元的时候没必要再继续分割
-            if (spec.NumRef <= MIN_LEAF_SIZE || depth >= MAX_DEPTH)
+            if (spec.numRef <= MIN_LEAF_SIZE || depth >= MAX_DEPTH)
                 return CreatLeaf(spec);
 
             // 挑选使用object split还是spatial split
-            float leafSAH = spec.Bounds.Area * spec.NumRef;
-            float nodeSAH = spec.Bounds.Area * 0.125f;//spec.Bounds.Area * 2; // 节点遍历的固定开销，2是个经验值（不一定是最好的）
+            float leafSAH = spec.bounds.Area * spec.numRef;
+            float nodeSAH = spec.bounds.Area * 0.125f;//spec.Bounds.Area * 2; // 节点遍历的固定开销，2是个经验值（不一定是最好的）
             ObjectSplit objectSplit = FindObjectSplit(spec, nodeSAH);
             SpatialSplit spatialSplit = SpatialSplit.New();
             if (depth < MAX_SPATIAL_DEPTH)
             {
-                var overlap = objectSplit.LeftBounds;
-                overlap.Intersect(objectSplit.RightBounds);
+                var overlap = objectSplit.leftBounds;
+                overlap.Intersect(objectSplit.rightBounds);
 
                 if (overlap.Area >= _minOverlap)
                     spatialSplit = FindSpatialSplit(spec, nodeSAH);
             }
 
             // 叶节点胜出，不论是Object还是Spatial slpit，分割后的
-            float minSAH = Mathf.Min(Mathf.Min(leafSAH, objectSplit.SAH), spatialSplit.SAH);
-            if (minSAH == leafSAH && spec.NumRef <= MAX_LEAF_SIZE)
+            float minSAH = Mathf.Min(Mathf.Min(leafSAH, objectSplit.sah), spatialSplit.sah);
+            if (minSAH == leafSAH && spec.numRef <= MAX_LEAF_SIZE)
                 return CreatLeaf(spec);
 
             // spatial split胜出，尝试执行spatial split
             NodeSpec left = NodeSpec.New();
             NodeSpec right = NodeSpec.New();
-            if (minSAH == spatialSplit.SAH)
+            if (minSAH == spatialSplit.sah)
                 PerformSpatialSplit(ref left, ref right, spec, spatialSplit);
 
             // objcet split胜出，或spatial split并未取得实质性进展，执行object split
-            if (left.NumRef == 0 || right.NumRef == 0)
+            if (left.numRef == 0 || right.numRef == 0)
                 PerformObjectSplit(ref left, ref right, spec, objectSplit);
 
-            _numDuplicates += left.NumRef + right.NumRef - spec.NumRef;
+            _numDuplicates += left.numRef + right.numRef - spec.numRef;
 
             // 由于后文取下标的方式，一定是先右后左
             var rightNode = BuildNodeRecursively(right, depth + 1);
             var leftNode = BuildNodeRecursively(left, depth + 1);
 
-            return new InnerSNode(spec.Bounds, leftNode, rightNode);
+            return new InnerNode(spec.bounds, leftNode, rightNode);
         }
 
         private ObjectSplit FindObjectSplit(NodeSpec spec, float nodeSAH)
         {
             ObjectSplit split = ObjectSplit.New();
-            int refIdx = _refStack.Count - spec.NumRef; // CreateLeaf以后_refStack发生了变化
-            for (_sortDim = 0; _sortDim < 3; _sortDim++)
+            int refIdx = _refStack.Count - spec.numRef; // CreateLeaf以后_refStack发生了变化
+            for (byte dim = 0; dim < 3; dim++)
             {
-                _refComparer.sortDim = _sortDim;
-                _refStack.Sort(refIdx, spec.NumRef, _refComparer);
+                _refComparer.sortDim = dim;
+                _refStack.Sort(refIdx, spec.numRef, _refComparer);
 
                 // 从右到左，记录每一种可能的分割后，处在“右边”包围盒的
                 AABB rightBounds = AABB.New();
 
-                for (int i = spec.NumRef - 1; i > 0; i--)
+                for (int i = spec.numRef - 1; i > 0; i--)
                 {
-                    rightBounds.Union(_refStack[refIdx + i].Bounds);
+                    rightBounds.Union(_refStack[refIdx + i].bounds);
                     _rightBounds[i - 1] = rightBounds; // 每一个都记录下来，后面才能比较
                 }
 
                 // 从左到右尝试分割，比较计算得到最佳SAH
                 AABB leftBounds = AABB.New();
-                for (int i = 1; i < spec.NumRef; i++)
+                for (int i = 1; i < spec.numRef; i++)
                 {
-                    leftBounds.Union(_refStack[refIdx + i - 1].Bounds);
-                    float sah = nodeSAH + leftBounds.Area * i/*左边有i个图元*/ + _rightBounds[i - 1].Area * (spec.NumRef - i);
-                    if (sah < split.SAH)
+                    leftBounds.Union(_refStack[refIdx + i - 1].bounds);
+                    float sah = nodeSAH + leftBounds.Area * i/*左边有i个图元*/ + _rightBounds[i - 1].Area * (spec.numRef - i);
+                    if (sah < split.sah)
                     {
-                        split.SAH = sah;
-                        split.Dim = _sortDim;
-                        split.NumLeftRef = i;
-                        split.LeftBounds = leftBounds;
-                        split.RightBounds = _rightBounds[i - 1];
+                        split.sah = sah;
+                        split.dim = dim;
+                        split.numLeft = i;
+                        split.leftBounds = leftBounds;
+                        split.rightBounds = _rightBounds[i - 1];
                     }
                 }
             }
@@ -264,8 +263,8 @@ namespace sif
         private SpatialSplit FindSpatialSplit(NodeSpec spec, float nodeSAH)
         {
             // _bins变量每一次分割都被复用
-            var origin = spec.Bounds.Min;
-            var binSize = (spec.Bounds.Max - origin) / N_SPATIAL_BINS;
+            var origin = spec.bounds.min;
+            var binSize = (spec.bounds.max - origin) / N_SPATIAL_BINS;
             var invBinSize = new Vector3(1f / binSize.x, 1f / binSize.y, 1f / binSize.z);
 
             for (int dim = 0; dim < 3; dim++)
@@ -273,12 +272,12 @@ namespace sif
                     _bins[dim, i] = SpatialBin.New();
 
             // 把图元分配到3个维度的bin中
-            for (int refIdx = _refStack.Count - spec.NumRef; refIdx < _refStack.Count; refIdx++)
+            for (int refIdx = _refStack.Count - spec.numRef; refIdx < _refStack.Count; refIdx++)
             {
                 var pRef = _refStack[refIdx];
                 // ....Vector3Int.FloorToInt 误用了 celling...查半天。。。。
-                var firstBin = Utils.ClampV3Int(Vector3Int.FloorToInt((pRef.Bounds.Min - origin).Multiply(invBinSize)), Vector3Int.zero, new Vector3Int(N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1));
-                var lastBin = Utils.ClampV3Int(Vector3Int.FloorToInt((pRef.Bounds.Max - origin).Multiply(invBinSize)), firstBin, new Vector3Int(N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1));
+                var firstBin = Utils.ClampV3Int(Vector3Int.FloorToInt((pRef.bounds.min - origin).Multiply(invBinSize)), Vector3Int.zero, new Vector3Int(N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1));
+                var lastBin = Utils.ClampV3Int(Vector3Int.FloorToInt((pRef.bounds.max - origin).Multiply(invBinSize)), firstBin, new Vector3Int(N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1, N_SPATIAL_BINS - 1));
 
                 for (int dim = 0; dim < 3; dim++)
                 {
@@ -288,14 +287,14 @@ namespace sif
                     {
                         PrimitiveRef leftRef, rightRef;
                         SplitReference(out leftRef, out rightRef, curRef, dim, origin[dim] + binSize[dim] * (i + 1));
-                        _bins[dim, i].Bounds.Union(leftRef.Bounds);
+                        _bins[dim, i].bounds.Union(leftRef.bounds);
                         curRef = rightRef;
                     }
 
-                    _bins[dim, lastBin[dim]].Bounds.Union(curRef.Bounds); // 分割后图元最右边的包围盒也算进来
+                    _bins[dim, lastBin[dim]].bounds.Union(curRef.bounds); // 分割后图元最右边的包围盒也算进来
                     // 只对分割后图元所在的第一个和最后一个bin添加图元引用计数
-                    _bins[dim, firstBin[dim]].Enter++;
-                    _bins[dim, lastBin[dim]].Exit++;
+                    _bins[dim, firstBin[dim]].enter++;
+                    _bins[dim, lastBin[dim]].exit++;
                 }
             }
 
@@ -307,25 +306,25 @@ namespace sif
                 AABB rightBounds = AABB.New();
                 for (int i = N_SPATIAL_BINS - 1; i > 0; i--)
                 {
-                    rightBounds.Union(_bins[dim, i].Bounds);
+                    rightBounds.Union(_bins[dim, i].bounds);
                     _rightBounds[i - 1] = rightBounds; //_rightBounds用来临时记录右边包围盒的，被复用
                 }
 
                 AABB leftBounds = AABB.New();
                 int leftNum = 0;
-                int rightNum = spec.NumRef;
+                int rightNum = spec.numRef;
                 for (int i = 1; i < N_SPATIAL_BINS; i++)
                 {
-                    leftBounds.Union(_bins[dim, i - 1].Bounds);
-                    leftNum += _bins[dim, i - 1].Enter;
-                    rightNum -= _bins[dim, i - 1].Exit;
+                    leftBounds.Union(_bins[dim, i - 1].bounds);
+                    leftNum += _bins[dim, i - 1].enter;
+                    rightNum -= _bins[dim, i - 1].exit;
 
                     float sah = nodeSAH + leftBounds.Area * leftNum + _rightBounds[i - 1].Area * rightNum;
-                    if (sah < split.SAH)
+                    if (sah < split.sah)
                     {
-                        split.SAH = sah;
-                        split.Dim = dim;
-                        split.Pos = origin[dim] + binSize[dim] * i;
+                        split.sah = sah;
+                        split.dim = dim;
+                        split.pos = origin[dim] + binSize[dim] * i;
                     }
                 }
             }
@@ -336,10 +335,10 @@ namespace sif
         private void SplitReference(out PrimitiveRef leftRef, out PrimitiveRef rightRef, PrimitiveRef curRef, int dim, float pos)
         {
             leftRef = rightRef = PrimitiveRef.New();
-            leftRef.TriangleIdx = rightRef.TriangleIdx = curRef.TriangleIdx;
+            leftRef.triangleIdx = rightRef.triangleIdx = curRef.triangleIdx;
 
-            var triangle = _bvhData.Scene.Triangles[curRef.TriangleIdx];
-            var vertices = _bvhData.Scene.Vertices;
+            var triangle = _bvhData.scene.triangles[curRef.triangleIdx];
+            var vertices = _bvhData.scene.vertices;
 
             // 遍历三角形的三条边01,12,20,然后将顶点与分割平面组成包围盒
             for (byte i = 0; i < 3; i++)
@@ -350,36 +349,36 @@ namespace sif
                 float v1p = v1[dim];
 
                 if (v0p <= pos)
-                    leftRef.Bounds.Union(v0);
+                    leftRef.bounds.Union(v0);
                 if (v0p >= pos)
-                    rightRef.Bounds.Union(v0);
+                    rightRef.bounds.Union(v0);
 
                 // 求得分割平面与三角形的交点，且算进左右两边的包围盒
                 if ((v0p < pos && v1p > pos) || (v0p > pos && v1p < pos))
                 {
                     Vector3 t = Vector3.Lerp(v0, v1, Mathf.Clamp((pos - v0p) / (v1p - v0p), 0.0f, 1.0f));
-                    leftRef.Bounds.Union(t);
-                    rightRef.Bounds.Union(t);
+                    leftRef.bounds.Union(t);
+                    rightRef.bounds.Union(t);
                 }
             }
 
-            leftRef.Bounds.Max[dim] = pos;
-            rightRef.Bounds.Min[dim] = pos;
+            leftRef.bounds.max[dim] = pos;
+            rightRef.bounds.min[dim] = pos;
             // 上面得到的是图元（三角形）被分割后左右两边的包围盒，但我们希望得到的包围盒除此之外，还应该限制在分割平面左右两个bin中
-            leftRef.Bounds.Intersect(curRef.Bounds);
-            rightRef.Bounds.Intersect(curRef.Bounds);
+            leftRef.bounds.Intersect(curRef.bounds);
+            rightRef.bounds.Intersect(curRef.bounds);
         }
 
         private void PerformObjectSplit(ref NodeSpec left, ref NodeSpec right, NodeSpec spec, ObjectSplit split)
         {
-            int refIdx = _refStack.Count - spec.NumRef;
-            _refComparer.sortDim = _sortDim = split.Dim;
-            _refStack.Sort(refIdx, spec.NumRef, _refComparer);
+            int refIdx = _refStack.Count - spec.numRef;
+            _refComparer.sortDim = split.dim;
+            _refStack.Sort(refIdx, spec.numRef, _refComparer);
 
-            left.NumRef = split.NumLeftRef;
-            left.Bounds = split.LeftBounds;
-            right.NumRef = spec.NumRef - split.NumLeftRef;
-            right.Bounds = split.RightBounds;
+            left.numRef = split.numLeft;
+            left.bounds = split.leftBounds;
+            right.numRef = spec.numRef - split.numLeft;
+            right.bounds = split.rightBounds;
         }
 
         /// <summary>
@@ -392,24 +391,24 @@ namespace sif
             // 划分在右侧：   [rightStart, refs.Count]
 
             var refs = _refStack;
-            int leftStart = refs.Count - spec.NumRef;
+            int leftStart = refs.Count - spec.numRef;
             int leftEnd = leftStart;
             int rightStart = refs.Count;
-            left.Bounds = right.Bounds = AABB.New();
+            left.bounds = right.bounds = AABB.New();
 
             // 处理完全只在分割平面某一侧的图元
             for (int i = leftEnd; i < rightStart; i++)
             {
                 // 完全在左边的往左边放
-                if (refs[i].Bounds.Max[split.Dim] <= split.Pos)
+                if (refs[i].bounds.max[split.dim] <= split.pos)
                 {
-                    left.Bounds.Union(refs[i].Bounds);
+                    left.bounds.Union(refs[i].bounds);
                     refs.Swap(i, leftEnd++);
                 }
                 // 完全在右边的往右边放
-                else if (refs[i].Bounds.Min[split.Dim] >= split.Pos)
+                else if (refs[i].bounds.min[split.dim] >= split.pos)
                 {
-                    right.Bounds.Union(refs[i].Bounds);
+                    right.bounds.Union(refs[i].bounds);
                     refs.Swap(i--, --rightStart);
                 }
             }
@@ -419,64 +418,64 @@ namespace sif
             {
                 // 初步分割引用
                 PrimitiveRef lref, rref;
-                SplitReference(out lref, out rref, refs[leftEnd], split.Dim, split.Pos);
+                SplitReference(out lref, out rref, refs[leftEnd], split.dim, split.pos);
 
-                AABB lub = left.Bounds;  // 不分割，完全划分到【左】侧时的包围盒,left unsplit bounds
-                AABB rub = right.Bounds; // 不分割，完全划分到【右】侧时的包围盒
-                AABB ldb = left.Bounds;  // 分割时划分到【左】侧的包围盒,left duplicate bounds
-                AABB rdb = right.Bounds; // 分割时划分到【右】侧的包围盒
-                lub.Union(refs[leftEnd].Bounds);
-                rub.Union(refs[leftEnd].Bounds);
-                ldb.Union(lref.Bounds);
-                rdb.Union(rref.Bounds);
+                AABB lub = left.bounds;  // 不分割，完全划分到【左】侧时的包围盒,left unsplit bounds
+                AABB rub = right.bounds; // 不分割，完全划分到【右】侧时的包围盒
+                AABB ldb = left.bounds;  // 分割时划分到【左】侧的包围盒,left duplicate bounds
+                AABB rdb = right.bounds; // 分割时划分到【右】侧的包围盒
+                lub.Union(refs[leftEnd].bounds);
+                rub.Union(refs[leftEnd].bounds);
+                ldb.Union(lref.bounds);
+                rdb.Union(rref.bounds);
 
                 float lac = leftEnd - leftStart;
                 float rac = refs.Count - rightStart;
                 float lbc = leftEnd - leftStart + 1;
                 float rbc = refs.Count - rightStart + 1;
 
-                float unsplitLeftSAH = lub.Area * lbc + right.Bounds.Area * rac;
-                float unsplitRightSAH = left.Bounds.Area * lac + rub.Area * rbc;
+                float unsplitLeftSAH = lub.Area * lbc + right.bounds.Area * rac;
+                float unsplitRightSAH = left.bounds.Area * lac + rub.Area * rbc;
                 float duplicateSAH = ldb.Area * lbc + rdb.Area * rbc;
                 float minSAH = Mathf.Min(Mathf.Min(unsplitLeftSAH, unsplitRightSAH), duplicateSAH);
 
                 // 整个图元划分到左侧
                 if (minSAH == unsplitLeftSAH)
                 {
-                    left.Bounds = lub;
+                    left.bounds = lub;
                     leftEnd++;
                 }
                 // 整个图元划分到右侧
                 else if (minSAH == unsplitRightSAH)
                 {
-                    right.Bounds = rub;
+                    right.bounds = rub;
                     refs.Swap(leftEnd, --rightStart);
                 }
                 // 同时划分到两侧
                 else
                 {
-                    left.Bounds = ldb;
-                    right.Bounds = rdb;
+                    left.bounds = ldb;
+                    right.bounds = rdb;
                     refs[leftEnd++] = lref;
                     refs.Add(rref);
                 }
             }
 
-            left.NumRef = leftEnd - leftStart;
-            right.NumRef = refs.Count - rightStart;
+            left.numRef = leftEnd - leftStart;
+            right.numRef = refs.Count - rightStart;
         }
 
-        SBVHNode CreatLeaf(NodeSpec spec)
+        BVHNode CreatLeaf(NodeSpec spec)
         {
-            for (int i = 0; i < spec.NumRef; i++)
+            for (int i = 0; i < spec.numRef; i++)
             {
                 var end = _refStack.Count - 1;
                 var pRef = _refStack[end];
-                _bvhData.TriIndices.Add(pRef.TriangleIdx);
+                _bvhData.triangles.Add(pRef.triangleIdx);
                 _refStack.RemoveAt(end);
             }
 
-            return new LeafSNode(spec.Bounds, _bvhData.TriIndices.Count - spec.NumRef, _bvhData.TriIndices.Count);
+            return new LeafNode(spec.bounds, _bvhData.triangles.Count - spec.numRef, _bvhData.triangles.Count);
         }
     }
 }
