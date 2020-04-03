@@ -27,6 +27,11 @@ namespace sif
             list[indexB] = tmp;
             return list;
         }
+
+        public static Vector4 Swizzle(Vector3 v3, float w = 0.0f)
+        {
+            return new Vector4(v3.x, v3.y, v3.z, w);
+        }
     }
 }
 

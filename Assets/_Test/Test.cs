@@ -14,6 +14,7 @@ public class Test : MonoBehaviour
     BVHScene bvhScene;
     [Range(0,20)]
     public int maxDepth = 20;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -27,6 +28,12 @@ public class Test : MonoBehaviour
         string log = "Build successfully, time: " + sw.ElapsedMilliseconds + " ms";
         Debug.Log(log);
         text.text = log;
+    }
+
+    [MenuItem("Examples/Chain Actions and close")]
+    static void EditorPlaying()
+    {
+        EditorApplication.Exit(0);
     }
 
     Queue<BVHNode> nodeQueue = new Queue<BVHNode>();
