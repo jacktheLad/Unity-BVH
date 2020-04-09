@@ -14,7 +14,7 @@ public static class BVHHelper
         var vetexOffset = 0;
         foreach (var mf in meshFilters)
         {
-            var mesh = mf.mesh;
+            var mesh = mf.sharedMesh;
             // mesh.vertices, mesh.triangles, localToWorldMatrix是属性
             // 在一个循环数很大的for里面会产生巨大开销
             var vertices = mesh.vertices;

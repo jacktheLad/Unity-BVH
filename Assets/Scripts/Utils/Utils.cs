@@ -5,7 +5,6 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Xml.Serialization;
 using UnityEngine;
-using ZeroFormatter;
 
 
 /// <summary>
@@ -46,70 +45,5 @@ public static class ExtensionUtils
 
 public static class IOUtils
 {
-    public static string ConvertToString(byte[] data)
-    {
-        return Encoding.UTF8.GetString(data, 0, data.Length);
-    }
 
-    public static string ConvertToString(byte[] data, Encoding encoding)
-    {
-        return encoding.GetString(data, 0, data.Length);
-    }
-
-    public static byte[] ConvertToByte(string str)
-    {
-        return Encoding.UTF8.GetBytes(str);
-    }
-
-    public static byte[] ConvertToByte(string str, Encoding encoding)
-    {
-        return encoding.GetBytes(str);
-    }
-
-    public static byte[] SerializeToBinary<T>(T obj)
-    {
-        return ZeroFormatterSerializer.Serialize(obj);
-    }
-
-    public static void SerializeToFile<T>(T obj, string path)
-    {
-        var bytes = SerializeToBinary(obj);
-        File.WriteAllBytes(path, bytes);
-    }
-
-    public static byte[] SerializeToXml(object obj)
-    {
-        MemoryStream stream = new MemoryStream();
-        XmlSerializer xs = new XmlSerializer(obj.GetType());
-        xs.Serialize(stream, obj);
-
-        byte[] data = stream.ToArray();
-        stream.Close();
-
-        return data;
-    }
-
-    public static T DeserializeWithBinary<T>(byte[] data)
-    {
-        return ZeroFormatterSerializer.Deserialize<T>(data);
-    }
-
-    public static T DeserializeWithFile<T>(string file)
-    {
-        var bytes = File.ReadAllBytes(file);
-        return DeserializeWithBinary<T>(bytes);
-    }
-
-    public static T DeserializeWithXml<T>(byte[] data)
-    {
-        MemoryStream stream = new MemoryStream();
-        stream.Write(data, 0, data.Length);
-        stream.Position = 0;
-        XmlSerializer xs = new XmlSerializer(typeof(T));
-        object obj = xs.Deserialize(stream);
-
-        stream.Close();
-
-        return (T)obj;
-    }
 }

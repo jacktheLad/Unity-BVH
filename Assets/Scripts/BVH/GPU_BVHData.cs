@@ -2,23 +2,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using ZeroFormatter;
-
-[ZeroFormattable]
-public class GPU_BVHData
+public class GPU_BVHData : MonoBehaviour
 {
-    [Index(0)]
-    public virtual List<Vector4Ser> nodes { get; set; } // 只存储非叶节点的数据，数据包括左右节点的aabb以及索引信息
-    [Index(1)]
-    public virtual List<Vector4Ser> woopTris { get; set; }
-    [Index(2)]
-    public virtual List<Vector4Ser> debugTris { get; set; }
-    [Index(3)]
-    public virtual List<int> triIndices { get; set; }
+    [HideInInspector]
+    public List<Vector4> nodes;// 只存储非叶节点的数据，数据包括左右节点的aabb以及索引信息
+    [HideInInspector]
+    public List<Vector4> woopTris;
+    [HideInInspector]
+    public List<Vector4> debugTris;
+    [HideInInspector]
+    public List<int> triIndices;
 
-    [IgnoreFormat]
     Vector4[] _woop = new Vector4[3];
-    [IgnoreFormat]
     Vector4[] _debug = new Vector4[3];
 
     class StackEntry
@@ -36,9 +31,9 @@ public class GPU_BVHData
     // ZeroFormatter需要无参构造函数
     public GPU_BVHData Generate(CPU_BVHData cpuData)
     {
-        nodes = new List<Vector4Ser>();
-        woopTris = new List<Vector4Ser>();
-        debugTris = new List<Vector4Ser>();
+        nodes = new List<Vector4>();
+        woopTris = new List<Vector4>();
+        debugTris = new List<Vector4>();
         triIndices = new List<int>();
 
         Stack<StackEntry> stack = new Stack<StackEntry>();
@@ -47,7 +42,7 @@ public class GPU_BVHData
         AABB[] cbox = new AABB[2];
         int[] cidx = new int[2];
 
-        Vector4Ser[] zero4 = new Vector4Ser[4] { new Vector4(), new Vector4(), new Vector4(), new Vector4() };
+        Vector4[] zero4 = new Vector4[4] { new Vector4(), new Vector4(), new Vector4(), new Vector4() };
         nodes.AddRange(zero4);
 
         while (stack.Count > 0)

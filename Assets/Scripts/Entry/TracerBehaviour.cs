@@ -11,6 +11,8 @@ public class TracerBehaviour : MonoBehaviour
     public Texture skyboxTex;
     public Light sun;
 
+    public GPU_BVHData gpuBVH;
+
     private Camera _camera;
     private RenderTexture _target;
     private RenderTexture _converged;
@@ -21,11 +23,6 @@ public class TracerBehaviour : MonoBehaviour
     private ComputeBuffer _woopTrisBuffer;
     private ComputeBuffer _triIndicesBuffer;
 
-    BVHNode root;
-    BVHScene bvhScene;
-
-    static string _bvhSaveDir = "Assets/Exports/";
-
     private void Awake()
     {
         _camera = GetComponent<Camera>();
@@ -34,33 +31,22 @@ public class TracerBehaviour : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        string bvhPath = string.Format("{0}{1}{2}", _bvhSaveDir, SceneManager.GetActiveScene().name, ".bvh");
-
-        GPU_BVHData gpuBvh = null;
-        if (File.Exists(bvhPath) && useCachedBVH)
+        if (gpuBVH == null)
         {
-            using (new SwTimer("DeserializeWithFile"))
-            {
-                gpuBvh = IOUtils.DeserializeWithFile<GPU_BVHData>(bvhPath);
-            }
+            Debug.Log("No cached BVH data found, building BVH now.");
+            var bvhScene = BVHHelper.BuildBVHScene();
+            var cpuBVH = new CPU_BVHData(bvhScene);
+            CPU_SBVHBuilder.Build(cpuBVH);
+            gpuBVH = new GPU_BVHData().Generate(cpuBVH);
         }
         else
         {
-            bvhScene = BVHHelper.BuildBVHScene();
-            var cpuBVH = new CPU_BVHData(bvhScene);
-            CPU_SBVHBuilder.Build(cpuBVH);
-            root = cpuBVH.root;
-            gpuBvh = new GPU_BVHData().Generate(cpuBVH);
-
-            if (!Directory.Exists(_bvhSaveDir))
-                Directory.CreateDirectory(_bvhSaveDir);
-
-            IOUtils.SerializeToFile(gpuBvh, bvhPath);
+            Debug.Log("Using cached BVH data.");
         }
 
-        CreateComputeBuffer(ref _nodesBuffer, gpuBvh.nodes, 16);
-        CreateComputeBuffer(ref _woopTrisBuffer, gpuBvh.woopTris, 16);
-        CreateComputeBuffer(ref _triIndicesBuffer, gpuBvh.triIndices, 4);
+        CreateComputeBuffer(ref _nodesBuffer, gpuBVH.nodes, 16);
+        CreateComputeBuffer(ref _woopTrisBuffer, gpuBVH.woopTris, 16);
+        CreateComputeBuffer(ref _triIndicesBuffer, gpuBVH.triIndices, 4);
     }
 
     private void OnDestroy()
