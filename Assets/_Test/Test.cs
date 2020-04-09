@@ -1,18 +1,16 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using sif;
-using UnityEditor;
-using System.IO;
 using System.Diagnostics;
 using Debug = UnityEngine.Debug;
+
+// TODO:模型导入默认开启ReadWrite
 
 public class Test : MonoBehaviour
 {
     public UnityEngine.UI.Text text;
     BVHNode root;
     BVHScene bvhScene;
-    [Range(0,20)]
+    [Range(1,20)]
     public int maxDepth = 20;
 
     // Start is called before the first frame update
@@ -21,19 +19,27 @@ public class Test : MonoBehaviour
         Stopwatch sw = new Stopwatch();
         sw.Start();
         bvhScene = BVHHelper.BuildBVHScene();
+        Debug.Log("bvhScene.triangles.Count = " + bvhScene.triangles.Count);
+
+        Debug.Log(" ================================ ");
+
         var bvhData = new CPU_BVHData(bvhScene);
         CPU_SBVHBuilder.Build(bvhData);
+
+        Debug.Log("bvhData.triangles.Count = " + bvhData.triangles.Count);
+        Debug.Log(" ================================ ");
+        // debug gpu bvh
+        GPU_BVHData gpuData = new GPU_BVHData().Generate(bvhData);
+        Debug.Log("gpuData.nodes.Count = " + gpuData.nodes.Count);
+        Debug.Log("gpuData.woopTris.Count = " + gpuData.woopTris.Count);
+        Debug.Log("gpuData.triIndices.Count = " + gpuData.triIndices.Count);
+
+
         root = bvhData.root;
         sw.Stop();
         string log = "Build successfully, time: " + sw.ElapsedMilliseconds + " ms";
         Debug.Log(log);
         text.text = log;
-    }
-
-    [MenuItem("Examples/Chain Actions and close")]
-    static void EditorPlaying()
-    {
-        EditorApplication.Exit(0);
     }
 
     Queue<BVHNode> nodeQueue = new Queue<BVHNode>();
@@ -42,9 +48,9 @@ public class Test : MonoBehaviour
         nodeQueue.Clear();
         nodeQueue.Enqueue(root);
         nodeQueue.Enqueue(null);
-        int depth = 1;
-        int nodeCount = 1;
-        while (nodeQueue.Count != 0 && depth <= maxDepth)
+        int depth = 0;
+        int nodeCount = 0;
+        while (nodeQueue.Count != 0 && depth < maxDepth)
         {
             BVHNode node = nodeQueue.Dequeue();
 
@@ -70,8 +76,12 @@ public class Test : MonoBehaviour
             {
                 nodeQueue.Enqueue(node.GetChildNode(1));
             }
-            nodeCount++;
+
+            if (node.IsLeaf())
+                nodeCount++;
         }
+
+        //Debug.LogError("nodeCount = " + nodeCount);
     }
 
     private void OnDrawGizmos()
