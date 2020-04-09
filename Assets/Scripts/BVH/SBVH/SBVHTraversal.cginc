@@ -89,7 +89,7 @@ void Trace(float3 rayOri,
 		leafAddr = 0;   // No postponed leaf.
 		nodeAddr = 0;   // Start from the root.
 		hitIndex = -1;  // No triangle intersected so far.
-		hitT = 1e10; // tmax  
+		hitT = 1.#INF; // tmax  
 	}
 
 	while (nodeAddr != EntrypointSentinel) {
@@ -124,7 +124,7 @@ void Trace(float3 rayOri,
 			float c1min = SpanBegin(c1lox, c1hix, c1loy, c1hiy, c1loz, c1hiz, tmin);
 			float c1max = SpanEnd(c1lox, c1hix, c1loy, c1hiy, c1loz, c1hiz, hitT);
 
-			float ray_tmax = 1e20;
+			//float ray_tmax = 1e20;
 			bool traverseChild0 = (c0min <= c0max);//&& (c0min >= tmin) && (c0min <= ray_tmax);
 			bool traverseChild1 = (c1min <= c1max);//&& (c1min >= tmin) && (c1min <= ray_tmax);
 			

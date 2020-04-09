@@ -1,4 +1,5 @@
 ﻿#include "Assets/Scripts/BVH/SBVH/SBVHTraversal.cginc"
+#define INFINITY 1.#INF
 
 #pragma kernel CSMain
 
@@ -96,7 +97,7 @@ RayHit CreateRayHit()
 {
     RayHit hit;
     hit.position = float3(0.0f, 0.0f, 0.0f);
-    hit.distance = 1.#INF;
+    hit.distance = INFINITY;
     hit.normal = float3(0.0f, 0.0f, 0.0f);
     hit.albedo = float3(0.0f, 0.0f, 0.0f);
     hit.specular = float3(0.0f, 0.0f, 0.0f);
@@ -144,7 +145,7 @@ float SmoothnessToPhongAlpha(float s)
 
 float3 Shade(inout Ray ray, RayHit hit)
 {
-    if (hit.distance < 1.#INF)
+    if (hit.distance < INFINITY)
     {
         // Calculate chances of diffuse and specular reflection
         hit.albedo = min(1.0f - hit.specular, hit.albedo);
@@ -210,10 +211,10 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     // Trace and shade the ray
     float3 result = float3(0, 0, 0);
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 3; i++)
     {
         int hitTriIdx;
-        float hitDist = 1e20f;
+        float hitDist = INFINITY;
         float3 triNormal;
         bool anyHit = false;
 
@@ -221,13 +222,13 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
         RayHit hit = CreateRayHit();
 
-        if (hitDist < 1000) {
+        if (hitDist < INFINITY) {
             hit.distance = hitDist;
             hit.position = ray.origin + hitDist * ray.direction;
             hit.normal = normalize(triNormal);
-            hit.albedo = 0.1f;
-            hit.specular = 0.9f;
-            hit.smoothness = 0.5f;
+            hit.albedo = 1.0f;
+            hit.specular = 0.03f;
+            hit.smoothness = 3.0f;
             hit.emission = float3(0.0f, 0.0f, 0.0f);
         }
 

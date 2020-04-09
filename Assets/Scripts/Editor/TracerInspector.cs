@@ -37,7 +37,12 @@ public class TracerInspector : Editor
 
     private static void SaveBVH(TracerBehaviour tracer, CPU_BVHData cpuBVH)
     {
-        var path = "Assets/Cache/BVH/" + EditorSceneManager.GetActiveScene().name + "_BVH.prefab";
+        var cacheDir = "Assets/Cache/BVH/";
+
+        if (!System.IO.Directory.Exists(cacheDir))
+            System.IO.Directory.CreateDirectory(cacheDir);
+
+        var path = cacheDir + EditorSceneManager.GetActiveScene().name + "_BVH.prefab";
         var dataObj = new GameObject("__BVHData__");
         var cachedBVH = dataObj.AddComponent<GPU_BVHData>();
         cachedBVH.Generate(cpuBVH);
