@@ -226,19 +226,19 @@ void CSMain (uint3 id : SV_DispatchThreadID)
             hit.distance = hitDist;
             hit.position = ray.origin + hitDist * ray.direction;
             hit.normal = normalize(triNormal);
-            hit.albedo = 1.0f;
-            hit.specular = 0.03f;
-            hit.smoothness = 3.0f;
+            hit.albedo = 0.0f;
+            hit.specular = 0.7f;
+            hit.smoothness = 1.0f;
             hit.emission = float3(0.0f, 0.0f, 0.0f);
         }
 
         //result = normalize(triNormal);
         //result = float3(hitDist > 100000 ? 0 : 1, 0, 0);
         result += ray.energy * Shade(ray, hit);
-
+        result = min(2, result);
         if (!any(ray.energy))
             break;
     }
-
+    
     Result[id.xy] = float4(result, 1);
 }
