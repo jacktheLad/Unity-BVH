@@ -106,7 +106,7 @@ public class TracerBehaviour : MonoBehaviour
     private void SetShaderParameters()
     {
         tracingShader.SetTexture(0, "_SkyboxTexture", skyboxTex);
-        tracingShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
+        tracingShader.SetMatrix("_Camera2World", _camera.cameraToWorldMatrix);
         tracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
 
         tracingShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));

@@ -1,12 +1,12 @@
-﻿#include "Assets/Scripts/BVH/SBVH/SBVHTraversal.cginc"
-#define INFINITY 1.#INF
+﻿#include "Assets/Scripts/Utils/Common.cginc"
+#include "Assets/Scripts/Core/Random.cginc"
+#include "Assets/Scripts/Core/Camera.cginc"
+#include "Assets/Scripts/BVH/SBVH/SBVHTraversal.cginc"
 
 #pragma kernel CSMain
 
 RWTexture2D<float4> Result;
 
-float4x4 _CameraToWorld;
-float4x4 _CameraInverseProjection;
 float4 _DirectionalLight;
 
 float2 _PixelOffset;
@@ -14,69 +14,6 @@ float2 _PixelOffset;
 Texture2D<float4> _SkyboxTexture;
 SamplerState sampler_SkyboxTexture;
 
-static const float PI = 3.14159265f;
-static const float EPSILON = 1e-8;
-
-//-------------------------------------
-//- UTILITY
-
-float sdot(float3 x, float3 y, float f = 1.0f)
-{
-    return saturate(dot(x, y) * f);
-}
-
-float energy(float3 color)
-{
-    return dot(color, 1.0f / 3.0f);
-}
-
-//-------------------------------------
-//- RANDOMNESS
-
-float2 _Pixel;
-float _Seed;
-
-float rand()
-{
-    float result = frac(sin(_Seed / 100.0f * dot(_Pixel, float2(12.9898f, 78.233f))) * 43758.5453f);
-    _Seed += 1.0f;
-    return result;
-}
-
-
-
-//-------------------------------------
-//- RAY
-
-struct Ray
-{
-    float3 origin;
-    float3 direction;
-    float3 energy;
-};
-
-Ray CreateRay(float3 origin, float3 direction)
-{
-    Ray ray;
-    ray.origin = origin;
-    ray.direction = direction;
-    ray.energy = float3(1.0f, 1.0f, 1.0f);
-    return ray;
-}
-
-Ray CreateCameraRay(float2 uv)
-{
-    // Transform the camera origin to world space
-    float3 origin = mul(_CameraToWorld, float4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
-    
-    // Invert the perspective projection of the view-space position
-    float3 direction = mul(_CameraInverseProjection, float4(uv, 0.0f, 1.0f)).xyz;
-    // Transform the direction from camera to world space and normalize
-    direction = mul(_CameraToWorld, float4(direction, 0.0f)).xyz;
-    direction = normalize(direction);
-
-    return CreateRay(origin, direction);
-}
 
 
 //-------------------------------------
@@ -211,7 +148,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     // Trace and shade the ray
     float3 result = float3(0, 0, 0);
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 8; i++)
     {
         int hitTriIdx;
         float hitDist = INFINITY;
