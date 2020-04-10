@@ -1,10 +1,8 @@
 # Unity-Tracer
 
 <details><summary>Features</summary>
-<p>
+    <p>
+
 - [x] SBVH(CPU Build,GPU Traversal)
-</p>
+	</p>
 </details>
-
-
-
