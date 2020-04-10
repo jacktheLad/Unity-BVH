@@ -1,5 +1,6 @@
 #ifndef INTERACTION_H
 #define INTERACTION_H
+#include "Assets/Scripts/Utils/Common.cginc"
 
 struct Interaction
 {
