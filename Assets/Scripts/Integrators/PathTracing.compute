@@ -1,6 +1,7 @@
 ﻿#include "Assets/Scripts/Utils/Common.cginc"
 #include "Assets/Scripts/Core/Random.cginc"
 #include "Assets/Scripts/Core/Camera.cginc"
+#include "Assets/Scripts/Core/Interaction.cginc"
 #include "Assets/Scripts/BVH/SBVH/SBVHTraversal.cginc"
 
 #pragma kernel CSMain
@@ -13,35 +14,6 @@ float2 _PixelOffset;
 
 Texture2D<float4> _SkyboxTexture;
 SamplerState sampler_SkyboxTexture;
-
-
-
-//-------------------------------------
-//- RAYHIT
-
-struct RayHit
-{
-    float3 position;
-    float distance;
-    float3 normal;
-    float3 albedo;
-    float3 specular;
-    float smoothness;
-    float3 emission;
-};
-
-RayHit CreateRayHit()
-{
-    RayHit hit;
-    hit.position = float3(0.0f, 0.0f, 0.0f);
-    hit.distance = INFINITY;
-    hit.normal = float3(0.0f, 0.0f, 0.0f);
-    hit.albedo = float3(0.0f, 0.0f, 0.0f);
-    hit.specular = float3(0.0f, 0.0f, 0.0f);
-    hit.smoothness = 0.0f;
-    hit.emission = float3(0.0f, 0.0f, 0.0f);
-    return hit;
-}
 
 
 //-------------------------------------
@@ -80,7 +52,7 @@ float SmoothnessToPhongAlpha(float s)
     return pow(1000.0f, s * s);
 }
 
-float3 Shade(inout Ray ray, RayHit hit)
+float3 Shade(inout Ray ray, Interaction hit)
 {
     if (hit.distance < INFINITY)
     {
@@ -157,7 +129,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
         Trace(ray.origin, ray.direction, hitTriIdx, hitDist, triNormal, anyHit);
 
-        RayHit hit = CreateRayHit();
+        Interaction hit = CreateInteraction();
 
         if (hitDist < INFINITY) {
             hit.distance = hitDist;
