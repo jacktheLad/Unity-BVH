@@ -2,7 +2,6 @@
 
 public class SwTimer : System.IDisposable
 {
-    float elapsed = 0.0f;
     static Stopwatch sw = new Stopwatch();
     string eventName = string.Empty;
     public SwTimer(string context)

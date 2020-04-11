@@ -157,6 +157,7 @@ void Trace(float3 rayOri,
 			// if nodeAddr less than 0 -> nodeAddr is a leaf
 			if (nodeAddr < 0 && leafAddr >= 0)  // if leafAddr >= 0 -> no leaf found yet (first leaf)
 			{
+				
 				searchingLeaf = false; // required for warp efficiency
 				leafAddr = nodeAddr;  
 				
@@ -170,7 +171,8 @@ void Trace(float3 rayOri,
 		}
 
 		while (leafAddr < 0) {
-			for (int triAddr = ~leafAddr; triAddr < 1000000; triAddr += 3) {
+			// 1.#INF是必须的，因为大场景的地址可能非常大
+			for (int triAddr = ~leafAddr; triAddr < 1.#INF; triAddr += 3) {
 				float4 v00 = woopTris[triAddr];
 
 				// 叶节点最后一个三角形

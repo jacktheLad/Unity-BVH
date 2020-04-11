@@ -54,6 +54,7 @@ float SmoothnessToPhongAlpha(float s)
 
 float3 Shade(inout Ray ray, Interaction hit)
 {
+    // 除非碰到光源，否则路径都在算能量损失，目前而言，光源有且只有天空盒
     if (hit.distance < INFINITY)
     {
         // Calculate chances of diffuse and specular reflection
@@ -138,7 +139,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
             hit.albedo = 0.0f;
             hit.specular = 0.7f;
             hit.smoothness = 1.0f;
-            hit.emission = float3(0.0f, 0.0f, 0.0f);
+            hit.emission = float3(0.5f, 0.5f, 0.5f);
         }
 
         //result = normalize(triNormal);

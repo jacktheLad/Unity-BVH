@@ -7,7 +7,6 @@ using Debug = UnityEngine.Debug;
 
 public class Test : MonoBehaviour
 {
-    public UnityEngine.UI.Text text;
     BVHNode root;
     BVHScene bvhScene;
     [Range(1,20)]
@@ -39,7 +38,6 @@ public class Test : MonoBehaviour
         sw.Stop();
         string log = "Build successfully, time: " + sw.ElapsedMilliseconds + " ms";
         Debug.Log(log);
-        text.text = log;
     }
 
     Queue<BVHNode> nodeQueue = new Queue<BVHNode>();
