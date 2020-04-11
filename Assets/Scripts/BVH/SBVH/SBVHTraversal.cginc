@@ -88,9 +88,9 @@ void Trace(float3 rayOri,
 		hitT = 1.#INF; // tmax  
 	}
 
-	while (nodeAddr != EntrypointSentinel) {
+	while (nodeAddr != (int)EntrypointSentinel) {
 		bool searchingLeaf = true; // required for warp efficiency
-		while (nodeAddr >= 0 && nodeAddr != EntrypointSentinel) {
+		while (nodeAddr >= 0 && nodeAddr != (int)EntrypointSentinel) {
 			float4 n0xy = _BVHNodes[nodeAddr]; // childnode 0, xy-bounds (c0.lo.x, c0.hi.x, c0.lo.y, c0.hi.y)		
 			float4 n1xy = _BVHNodes[nodeAddr + 1]; // childnode 1, xy-bounds (c1.lo.x, c1.hi.x, c1.lo.y, c1.hi.y)		
 			float4 nz = _BVHNodes[nodeAddr + 2]; // childnode 0 and 1, z-bounds (c0.lo.z, c0.hi.z, c1.lo.z, c1.hi.z)		
