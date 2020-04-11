@@ -28,6 +28,7 @@ public class TracerInspector : Editor
         //}
 
         DrawProperty("useCachedBVH");
+        DrawProperty("spps");
         DrawProperty("tracingShader");
         DrawProperty("skyboxTex");
         DrawProperty("sun");

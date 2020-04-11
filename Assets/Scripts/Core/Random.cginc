@@ -11,4 +11,8 @@ float rand()
     return result;
 }
 
+void InitRand(int2 xy) {
+    _Pixel = xy;
+}
+
 #endif

@@ -6,14 +6,15 @@ using UnityEngine.SceneManagement;
 public class TracerBehaviour : MonoBehaviour
 {
     public bool useCachedBVH = true;
-
+    [Range(1, 10)]
+    public int spps = 1;
     public ComputeShader tracingShader;
     public Texture skyboxTex;
     public Light sun;
 
     public GPU_BVHData gpuBVH;
 
-    private Camera _camera;
+    private CameraSettings _cameraSettings;
     private RenderTexture _target;
     private RenderTexture _converged;
     private Material _addMaterial;
@@ -25,7 +26,7 @@ public class TracerBehaviour : MonoBehaviour
 
     private void Awake()
     {
-        _camera = GetComponent<Camera>();
+        _cameraSettings = GetComponent<CameraSettings>();
     }
 
     // Start is called before the first frame update
@@ -59,10 +60,11 @@ public class TracerBehaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (transform.hasChanged)
+        if (transform.hasChanged || _cameraSettings.hasChanged)
         {
             _currentSample = 0;
             transform.hasChanged = false;
+            _cameraSettings.hasChanged = false;
         }
     }
 
@@ -105,19 +107,17 @@ public class TracerBehaviour : MonoBehaviour
 
     private void SetShaderParameters()
     {
+        _cameraSettings.SetData(tracingShader);
+        tracingShader.SetInt("_SPPS", spps);
         tracingShader.SetTexture(0, "_SkyboxTexture", skyboxTex);
-        tracingShader.SetMatrix("_Camera2World", _camera.cameraToWorldMatrix);
-        tracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
-
-        tracingShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
         tracingShader.SetFloat("_Seed", Random.value);
 
         Vector3 l = sun.transform.forward;
         tracingShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, sun.intensity));
 
-        SetComputeBuffer("nodes", _nodesBuffer);
-        SetComputeBuffer("woopTris", _woopTrisBuffer);
-        SetComputeBuffer("triIndices", _triIndicesBuffer);
+        SetComputeBuffer("_BVHNodes", _nodesBuffer);
+        SetComputeBuffer("_BVHWoopTris", _woopTrisBuffer);
+        SetComputeBuffer("_BVHTriIndices", _triIndicesBuffer);
     }
 
     private void InitRenderTexture()

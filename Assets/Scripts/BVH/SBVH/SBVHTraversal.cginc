@@ -1,13 +1,9 @@
 #ifndef SBVH_TRAVERSAL_H
 #define SBVH_TRAVERSAL_H
 
-StructuredBuffer<float4> nodes;
-StructuredBuffer<float4> woopTris;
-StructuredBuffer<float4> debugTris;
-StructuredBuffer<int>  triIndices;
-
-int leafNodeCount;
-int triangleCount;
+StructuredBuffer<float4> _BVHNodes;
+StructuredBuffer<float4> _BVHWoopTris;
+StructuredBuffer<int>  _BVHTriIndices;
 
 #define EntrypointSentinel 0x76543210
 
@@ -95,17 +91,17 @@ void Trace(float3 rayOri,
 	while (nodeAddr != EntrypointSentinel) {
 		bool searchingLeaf = true; // required for warp efficiency
 		while (nodeAddr >= 0 && nodeAddr != EntrypointSentinel) {
-			float4 n0xy = nodes[nodeAddr]; // childnode 0, xy-bounds (c0.lo.x, c0.hi.x, c0.lo.y, c0.hi.y)		
-			float4 n1xy = nodes[nodeAddr + 1]; // childnode 1, xy-bounds (c1.lo.x, c1.hi.x, c1.lo.y, c1.hi.y)		
-			float4 nz = nodes[nodeAddr + 2]; // childnode 0 and 1, z-bounds (c0.lo.z, c0.hi.z, c1.lo.z, c1.hi.z)		
-            float4 tmp = nodes[nodeAddr + 3]; // contains indices to 2 childnodes in case of innernode, see below
+			float4 n0xy = _BVHNodes[nodeAddr]; // childnode 0, xy-bounds (c0.lo.x, c0.hi.x, c0.lo.y, c0.hi.y)		
+			float4 n1xy = _BVHNodes[nodeAddr + 1]; // childnode 1, xy-bounds (c1.lo.x, c1.hi.x, c1.lo.y, c1.hi.y)		
+			float4 nz = _BVHNodes[nodeAddr + 2]; // childnode 0 and 1, z-bounds (c0.lo.z, c0.hi.z, c1.lo.z, c1.hi.z)		
+            float4 tmp = _BVHNodes[nodeAddr + 3]; // contains indices to 2 childnodes in case of innernode, see below
             int2 cnodes = int2((int)tmp.x, (int)tmp.y);
             // (childindex = size of array during building, see CudaBVH.cpp)
 
 			// compute ray intersections with BVH node bounding box
 
 			/// RAY BOX INTERSECTION
-			// Intersect the ray against the child nodes.
+			// Intersect the ray against the child _BVHNodes.
 
 			float c0lox = n0xy.x * idirx - oodx; // n0xy.x = c0.lo.x, child 0 minbound x
 			float c0hix = n0xy.y * idirx - oodx; // n0xy.y = c0.hi.x, child 0 maxbound x
@@ -153,7 +149,7 @@ void Trace(float3 rayOri,
 			}
 
 			// First leaf => postpone and continue traversal.
-			// leafnodes have a negative index to distinguish them from inner nodes
+			// leafnodes have a negative index to distinguish them from inner _BVHNodes
 			// if nodeAddr less than 0 -> nodeAddr is a leaf
 			if (nodeAddr < 0 && leafAddr >= 0)  // if leafAddr >= 0 -> no leaf found yet (first leaf)
 			{
@@ -173,7 +169,7 @@ void Trace(float3 rayOri,
 		while (leafAddr < 0) {
 			// 1.#INF是必须的，因为大场景的地址可能非常大
 			for (int triAddr = ~leafAddr; triAddr < 1.#INF; triAddr += 3) {
-				float4 v00 = woopTris[triAddr];
+				float4 v00 = _BVHWoopTris[triAddr];
 
 				// 叶节点最后一个三角形
 				if(v00.x == 1e20f)
@@ -188,7 +184,7 @@ void Trace(float3 rayOri,
 					// Compute and check barycentric u.
 
 					// fetch second precomputed triangle edge
-					float4 v11 = woopTris[triAddr + 1];
+					float4 v11 = _BVHWoopTris[triAddr + 1];
 					float Ox = v11.w + origx*v11.x + origy*v11.y + origz*v11.z;  // Origin.x
 					float Dx = dirx * v11.x + diry * v11.y + dirz * v11.z;  // Direction.x
 					float u = Ox + t * Dx; /// parametric equation of a ray (intersection point)
@@ -198,7 +194,7 @@ void Trace(float3 rayOri,
 						// Compute and check barycentric v.
 
 						// fetch third precomputed triangle edge
-						float4 v22 = woopTris[triAddr + 2];
+						float4 v22 = _BVHWoopTris[triAddr + 2];
 						float Oy = v22.w + origx*v22.x + origy*v22.y + origz*v22.z;
 						float Dy = dirx*v22.x + diry*v22.y + dirz*v22.z;
 						float v = Oy + t*Dy;
@@ -239,7 +235,7 @@ void Trace(float3 rayOri,
 	}
 
 	if (hitIndex != -1){
-		hitIndex = triIndices[hitIndex];
+		hitIndex = _BVHTriIndices[hitIndex];
 		// remapping tri indices delayed until this point for performance reasons
 		// (slow texture memory lookup in de triIndicesTexture) because multiple triangles per node can potentially be hit
 	}

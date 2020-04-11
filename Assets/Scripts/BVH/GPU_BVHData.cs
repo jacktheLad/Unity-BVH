@@ -9,8 +9,6 @@ public class GPU_BVHData : MonoBehaviour
     [HideInInspector]
     public List<Vector4> woopTris;
     [HideInInspector]
-    public List<Vector4> debugTris;
-    [HideInInspector]
     public List<int> triIndices;
 
     Vector4[] _woop = new Vector4[3];
@@ -33,7 +31,6 @@ public class GPU_BVHData : MonoBehaviour
     {
         nodes = new List<Vector4>();
         woopTris = new List<Vector4>();
-        debugTris = new List<Vector4>();
         triIndices = new List<int>();
 
         Stack<StackEntry> stack = new Stack<StackEntry>();
@@ -74,10 +71,6 @@ public class GPU_BVHData : MonoBehaviour
                     woopTris.Add(_woop[1]);
                     woopTris.Add(_woop[2]);
 
-                    debugTris.Add(_debug[0]);
-                    debugTris.Add(_debug[1]);
-                    debugTris.Add(_debug[2]);
-
                     triIndices.Add(cpuData.triangles[j]);
                     triIndices.Add(0); // 对其索引，好查找
                     triIndices.Add(0);
@@ -85,7 +78,6 @@ public class GPU_BVHData : MonoBehaviour
 
                 // 用来标记属于该叶节点的三角形末端
                 woopTris.Add(new Vector4(1e20f, 0, 0, 0));
-                debugTris.Add(new Vector4(1e20f, 0, 0, 0));
                 triIndices.Add(0);
             }
 

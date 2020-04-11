@@ -8,41 +8,11 @@
 
 RWTexture2D<float4> Result;
 
+int _SPPS;
 float4 _DirectionalLight;
-
-float2 _PixelOffset;
 
 Texture2D<float4> _SkyboxTexture;
 SamplerState sampler_SkyboxTexture;
-
-
-//-------------------------------------
-//- SAMPLING
-
-float3x3 GetTangentSpace(float3 normal)
-{
-    // Choose a helper vector for the cross product
-    float3 helper = float3(1, 0, 0);
-    if (abs(normal.x) > 0.99f)
-        helper = float3(0, 0, 1);
-
-    // Generate vectors
-    float3 tangent = normalize(cross(normal, helper));
-    float3 binormal = normalize(cross(normal, tangent));
-    return float3x3(tangent, binormal, normal);
-}
-
-float3 SampleHemisphere(float3 normal, float alpha)
-{
-    // Sample the hemisphere, where alpha determines the kind of the sampling
-    float cosTheta = pow(rand(), 1.0f / (alpha + 1.0f));
-    float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
-    float phi = 2 * PI * rand();
-    float3 tangentSpaceDir = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-
-    // Transform direction to world space
-    return mul(tangentSpaceDir, GetTangentSpace(normal));
-}
 
 //-------------------------------------
 //- SHADE
@@ -107,48 +77,55 @@ float3 Shade(inout Ray ray, Interaction hit)
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    _Pixel = id.xy;
-
+    // For random number generating
+    InitRand(id.xy);
     // Get the dimensions of the RenderTexture
     uint width, height;
     Result.GetDimensions(width, height);
 
-    // Transform pixel to [-1,1] range
-    float2 uv = float2((id.xy + _PixelOffset) / float2(width, height) * 2.0f - 1.0f);
-
     // Get a ray for the UVs
-    Ray ray = CreateCameraRay(uv);
+
 
     // Trace and shade the ray
     float3 result = float3(0, 0, 0);
-    for (int i = 0; i < 8; i++)
+
+    for (int spp = 0; spp < _SPPS; spp++)
     {
-        int hitTriIdx;
-        float hitDist = INFINITY;
-        float3 triNormal;
-        bool anyHit = false;
+        Ray ray = CreateCameraRay(id.xy, width, height);
+        float3 acc = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            int hitTriIdx;
+            float hitDist = INFINITY;
+            float3 triNormal;
+            bool anyHit = false;
 
-        Trace(ray.origin, ray.direction, hitTriIdx, hitDist, triNormal, anyHit);
+            Trace(ray.origin, ray.direction, hitTriIdx, hitDist, triNormal, anyHit);
 
-        Interaction hit = CreateInteraction();
+            Interaction hit = CreateInteraction();
 
-        if (hitDist < INFINITY) {
-            hit.distance = hitDist;
-            hit.position = ray.origin + hitDist * ray.direction;
-            hit.normal = normalize(triNormal);
-            hit.albedo = 0.0f;
-            hit.specular = 0.7f;
-            hit.smoothness = 1.0f;
-            hit.emission = float3(0.5f, 0.5f, 0.5f);
+            if (hitDist < INFINITY) {
+                hit.distance = hitDist;
+                hit.position = ray.origin + hitDist * ray.direction;
+                hit.normal = normalize(triNormal);
+                hit.albedo = 0.4f;
+                hit.specular = 0.6f;
+                hit.smoothness = 0.6f;
+                hit.emission = float3(0.0f, 0.0f, 0.0f);
+            }
+
+            //result = normalize(triNormal);
+            //result = float3(hitDist > 100000 ? 0 : 1, 0, 0);
+            acc += ray.energy * Shade(ray, hit);
+           
+            if (!any(ray.energy))
+                break;
         }
-
-        //result = normalize(triNormal);
-        //result = float3(hitDist > 100000 ? 0 : 1, 0, 0);
-        result += ray.energy * Shade(ray, hit);
-        result = min(2, result);
-        if (!any(ray.energy))
-            break;
+        result += acc / _SPPS;
     }
+
+    result = max(0, min(1, result * 8));
+    result = pow(result, 2.2);
     
     Result[id.xy] = float4(result, 1);
 }
