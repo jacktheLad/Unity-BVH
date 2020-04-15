@@ -1,0 +1,7 @@
+#ifndef MATERIAL_H
+#define MATERIAL_H
+
+#define MAT_DIFFUSE 0x00000000u
+#define MAT_MIRROR	0x00000001u
+
+#endif
