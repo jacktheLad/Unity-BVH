@@ -470,10 +470,10 @@ public class CPU_SBVHBuilder
         {
             var end = _refStack.Count - 1;
             var pRef = _refStack[end];
-            _bvhData.triangles.Add(pRef.triangleIdx);
+            _bvhData.triIndices.Add(pRef.triangleIdx);
             _refStack.RemoveAt(end);
         }
 
-        return new LeafNode(spec.bounds, _bvhData.triangles.Count - spec.numRef, _bvhData.triangles.Count);
+        return new LeafNode(spec.bounds, _bvhData.triIndices.Count - spec.numRef, _bvhData.triIndices.Count);
     }
 }

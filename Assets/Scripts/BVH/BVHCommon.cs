@@ -149,13 +149,22 @@ public class LeafNode : BVHNode
 
 public class CPU_BVHData
 {
+    /// <summary>
+    /// The scene we'll building.
+    /// </summary>
     public BVHScene scene;
+    /// <summary>
+    /// The root of the BVH,
+    /// </summary>
     public BVHNode root;
-    public List<int> triangles;
+    /// <summary>
+    /// Contains tringle indices in the BVHScene.triangles.
+    /// </summary>
+    public List<int> triIndices;
 
     public CPU_BVHData(BVHScene scene)
     {
-        triangles = new List<int>();
+        triIndices = new List<int>();
         this.scene = scene;
     }
 }
