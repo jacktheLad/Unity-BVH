@@ -25,7 +25,7 @@ public class Test : MonoBehaviour
         var bvhData = new CPU_BVHData(bvhScene);
         CPU_SBVHBuilder.Build(bvhData);
 
-        Debug.Log("bvhData.triangles.Count = " + bvhData.triangles.Count);
+        Debug.Log("bvhData.triangles.Count = " + bvhData.triIndices.Count);
         Debug.Log(" ================================ ");
         // debug gpu bvh
         GPU_BVHData gpuData = new GPU_BVHData().Generate(bvhData);

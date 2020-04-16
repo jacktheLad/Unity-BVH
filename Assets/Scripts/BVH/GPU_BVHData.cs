@@ -71,7 +71,7 @@ public class GPU_BVHData : MonoBehaviour
                     woopTris.Add(_woop[1]);
                     woopTris.Add(_woop[2]);
 
-                    triIndices.Add(cpuData.triangles[j]);
+                    triIndices.Add(cpuData.triIndices[j]);
                     triIndices.Add(0); // 对其索引，好查找
                     triIndices.Add(0);
                 }
@@ -94,7 +94,7 @@ public class GPU_BVHData : MonoBehaviour
     private void woopifyTri(CPU_BVHData bvh, int triIdx)
     {
         // fetch the 3 vertex indices of this triangle
-        Vector3Int vtxInds = bvh.scene.triangles[bvh.triangles[triIdx]];
+        Vector3Int vtxInds = bvh.scene.triangles[bvh.triIndices[triIdx]];
         Vector3 v0 = bvh.scene.vertices[vtxInds.x];
         Vector3 v1 = bvh.scene.vertices[vtxInds.y];
         Vector3 v2 = bvh.scene.vertices[vtxInds.z];

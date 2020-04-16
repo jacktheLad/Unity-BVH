@@ -151,11 +151,11 @@ public class CPU_BVHData
 {
     public BVHScene scene;
     public BVHNode root;
-    public List<int> triangles;
+    public List<int> triIndices;
 
     public CPU_BVHData(BVHScene scene)
     {
-        triangles = new List<int>();
+        triIndices = new List<int>();
         this.scene = scene;
     }
 }
