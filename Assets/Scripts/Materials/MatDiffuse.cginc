@@ -2,8 +2,9 @@
 #define MAT_DIFFUSE_H
 
 struct MatDiffuse {
+	float4 color;
 	int diffuseTexID;
-	int type;	// Lambertian or OrenNayar?
+	float sigma;	// Lambertian or OrenNayar?
 };
 
 #endif

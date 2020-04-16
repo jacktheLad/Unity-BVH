@@ -2,8 +2,9 @@
 
 Shader "Tracer/Preview/Diffuse" {
     Properties{
-        _Type("Type", Int) = 0
-        _DiffuseTex("DiffuseTex", 2D) = "white" {}
+        _Color("Main Color", Color) = (1, 1, 1, 1)
+        _Sigma("Sigma", Float) = 0
+        _MainTex("Base (RGB)", 2D) = "white" {}
     }
     SubShader{
         Tags { "RenderType" = "Opaque" }
@@ -12,19 +13,19 @@ Shader "Tracer/Preview/Diffuse" {
         CGPROGRAM
         #pragma surface surf Lambert
 
-        sampler2D _DiffuseTex;
+        sampler2D _MainTex;
+        fixed4 _Color;
+        float _Sigma;
 
         struct Input {
-            float2 uv_DiffuseTex;
+            float2 uv_MainTex;
         };
 
         void surf(Input IN, inout SurfaceOutput o) {
-            fixed4 c = tex2D(_DiffuseTex, IN.uv_DiffuseTex);
+            fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
             o.Albedo = c.rgb;
             o.Alpha = c.a;
         }
         ENDCG
     }
-
-    Fallback "Legacy Shaders/VertexLit"
 }
