@@ -1,6 +1,7 @@
 ﻿#include "Assets/Scripts/Utils/Common.cginc"
 #include "Assets/Scripts/Core/Random.cginc"
 #include "Assets/Scripts/Core/Camera.cginc"
+#include "Assets/Scripts/Core/Material.cginc"
 #include "Assets/Scripts/Core/Interaction.cginc"
 #include "Assets/Scripts/BVH/SBVH/SBVHTraversal.cginc"
 
@@ -27,6 +28,7 @@ float3 Shade(inout Ray ray, Interaction hit)
     // 除非碰到光源，否则路径都在算能量损失，目前而言，光源有且只有天空盒
     if (hit.distance < INFINITY)
     {
+
         // Calculate chances of diffuse and specular reflection
         hit.albedo = min(1.0f - hit.specular, hit.albedo);
         float specChance = energy(hit.specular);

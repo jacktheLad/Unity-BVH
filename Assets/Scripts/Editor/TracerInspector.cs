@@ -13,7 +13,8 @@ public class TracerInspector : Editor
         bool pressGenerateBVH = GUILayout.Button("Rebuild BVH", GUILayout.ExpandWidth(true));
         if (pressGenerateBVH)
         {
-            var bvhScene = BVHHelper.BuildBVHScene();
+            var scene = new Scene(true);
+            var bvhScene = new BVHScene(scene.triangles, scene.vertices);
             var cpuBVH = new CPU_BVHData(bvhScene);
             CPU_SBVHBuilder.Build(cpuBVH);
 

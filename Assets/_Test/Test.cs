@@ -12,12 +12,12 @@ public class Test : MonoBehaviour
     [Range(1,20)]
     public int maxDepth = 20;
 
-    // Start is called before the first frame update
     void Start()
     {
         Stopwatch sw = new Stopwatch();
         sw.Start();
-        bvhScene = BVHHelper.BuildBVHScene();
+        Scene scene = new Scene(true);
+        bvhScene = new BVHScene(scene.triangles, scene.vertices);
         Debug.Log("bvhScene.triangles.Count = " + bvhScene.triangles.Count);
 
         Debug.Log(" ================================ ");

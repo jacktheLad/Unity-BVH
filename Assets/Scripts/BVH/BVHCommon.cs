@@ -150,7 +150,7 @@ public class LeafNode : BVHNode
 public class CPU_BVHData
 {
     /// <summary>
-    /// The scene we'll building.
+    /// The scene will be used.
     /// </summary>
     public BVHScene scene;
     /// <summary>
@@ -158,7 +158,7 @@ public class CPU_BVHData
     /// </summary>
     public BVHNode root;
     /// <summary>
-    /// Contains tringle indices in the BVHScene.triangles.
+    /// Contains tringle indices in BVHScene.triangles.
     /// </summary>
     public List<int> triIndices;
 

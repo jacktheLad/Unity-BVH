@@ -20,9 +20,21 @@ public class TracerBehaviour : MonoBehaviour
     private Material _addMaterial;
     private uint _currentSample = 0;
 
+    // TODO: Move to a better position.
+    // ======================= Compute buffers =======================
+    // * bvh *
     private ComputeBuffer _nodesBuffer;
     private ComputeBuffer _woopTrisBuffer;
     private ComputeBuffer _triIndicesBuffer;
+
+    //
+    private ComputeBuffer _verticesBuffer;
+    private ComputeBuffer _trianglesBuffer;
+    private ComputeBuffer _normalsBuffer;
+    // ======================= Compute buffers =======================
+
+    // The scene be rendered.
+    private Scene _theScene;
 
     private void Awake()
     {
@@ -35,7 +47,8 @@ public class TracerBehaviour : MonoBehaviour
         if (gpuBVH == null)
         {
             Debug.Log("No cached BVH data found, building BVH now.");
-            var bvhScene = BVHHelper.BuildBVHScene();
+            _theScene = new Scene(true);
+            var bvhScene = new BVHScene(_theScene.triangles, _theScene.vertices);
             var cpuBVH = new CPU_BVHData(bvhScene);
             CPU_SBVHBuilder.Build(cpuBVH);
             gpuBVH = new GPU_BVHData().Generate(cpuBVH);
