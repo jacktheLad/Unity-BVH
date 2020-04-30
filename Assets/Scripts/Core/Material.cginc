@@ -2,12 +2,20 @@
 #define MATERIAL_H
 
 #include "Assets/Scripts/Core/Interaction.cginc"
+#include "Assets/Scripts/Materials/MatDiffuse.cginc"
 
-#define MAT_DIFFUSE 0x00000000
-#define MAT_MIRROR	0x00000001
+#define MAT_DIFFUSE 0
+#define MAT_MIRROR	1
 
-void CreateMaterial(int matTypeID) {
+struct MaterialIndexer {
+	int typeID;
+	int index;
+};
 
+void CreateMaterial(MaterialIndexer indexer) {
+	if (indexer.typeID == (int)MAT_DIFFUSE) {
+
+	}
 }
 
 void ComputeShadingData(inout Interaction hit) {

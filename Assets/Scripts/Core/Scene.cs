@@ -12,14 +12,14 @@ public class Scene
     // per vertex data
     public List<Vector3> vertices = new List<Vector3>();
     public List<Vector3> normals = new List<Vector3>();
-    public List<Vector2> uvs0 = new List<Vector2>();
+    public List<Vector2> uv0s = new List<Vector2>();
 
     // per triangle data
     public List<BVHTriangle> triangles = new List<BVHTriangle>();
     public List<MaterialIndexer> materialIndexers = new List<MaterialIndexer>();
 
-    // textures
-    public List<Texture> textures = new List<Texture>();
+    // textures, since we use Texture2DArray, support 512x512 only for the moment.
+    public List<Texture2D> diffuseTextures = new List<Texture2D>();
 
     public Scene(bool immediatelyBuild = false)
     {
@@ -37,7 +37,7 @@ public class Scene
             // 在一个循环数很大的for里面会产生巨大开销
             var verts = mesh.vertices;
             var norms = mesh.normals;
-            uvs0 = mesh.uv.ToList();
+            uv0s.AddRange(mesh.uv);
 
             var matWorld = mf.transform.localToWorldMatrix;
             for (int i = 0; i < verts.Length; i++)
@@ -75,15 +75,16 @@ public class Scene
 
         var mat = renderer.sharedMaterial;
         var shaderName = mat.shader.name;
-        if(shaderName == "Diffuse")
+        if(shaderName.Contains("Diffuse"))
         {
             MatDiffuse data = new MatDiffuse();
             var c = mat.GetColor("_Color");
             data.color = new Vector3(c.r, c.g, c.b);
 
-            var t = mat.GetTexture("_MainTex");
-            if (!textures.Contains(t))textures.Add(t);
-            data.diffuseTexIdx = textures.IndexOf(t);
+            var t = mat.GetTexture("_MainTex") as Texture2D;
+            Debug.Assert(t.width == 512 && t.height == 512);
+            if (!diffuseTextures.Contains(t))diffuseTextures.Add(t);
+            data.diffuseTexIdx = diffuseTextures.IndexOf(t);
 
             data.sigma = mat.GetFloat("_Sigma");
 

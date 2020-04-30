@@ -11,6 +11,7 @@ struct Interaction
     float3 specular;
     float smoothness;
     float3 emission;
+    int triIdx;
 };
 
 Interaction CreateInteraction()
@@ -23,6 +24,7 @@ Interaction CreateInteraction()
     hit.specular = float3(0.0f, 0.0f, 0.0f);
     hit.smoothness = 0.0f;
     hit.emission = float3(0.0f, 0.0f, 0.0f);
+    hit.triIdx = -1;
     return hit;
 }
 

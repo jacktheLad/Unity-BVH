@@ -27,10 +27,20 @@ public class TracerBehaviour : MonoBehaviour
     private ComputeBuffer _woopTrisBuffer;
     private ComputeBuffer _triIndicesBuffer;
 
-    //
+    // per vertex
     private ComputeBuffer _verticesBuffer;
-    private ComputeBuffer _trianglesBuffer;
     private ComputeBuffer _normalsBuffer;
+    private ComputeBuffer _uv0sBuffer;
+
+    // per triangle
+    private ComputeBuffer _trianglesBuffer;
+    private ComputeBuffer _materialIndexersBuffer;
+
+    // materials
+    private ComputeBuffer _matDiffusesBuffer;
+
+    // textures
+    private Texture2DArray _diffuseTextures;
     // ======================= Compute buffers =======================
 
     // The scene be rendered.
@@ -58,9 +68,34 @@ public class TracerBehaviour : MonoBehaviour
             Debug.Log("Using cached BVH data.");
         }
 
+        // bind texture2darray
+        var diffuseTexLen = _theScene.diffuseTextures.Count;
+        if (_theScene.diffuseTextures.Count > 0)
+        {
+            var tex = _theScene.diffuseTextures[0];
+            _diffuseTextures = new Texture2DArray(tex.width, tex.height, diffuseTexLen, tex.format, true);
+            for (int i = 0; i < diffuseTexLen; i++)
+            {
+                Graphics.CopyTexture(_theScene.diffuseTextures[i], 0, _diffuseTextures, i);
+            }
+        }
+
+        // bvh
         CreateComputeBuffer(ref _nodesBuffer, gpuBVH.nodes, 16);
         CreateComputeBuffer(ref _woopTrisBuffer, gpuBVH.woopTris, 16);
         CreateComputeBuffer(ref _triIndicesBuffer, gpuBVH.triIndices, 4);
+
+        // per vertex
+        CreateComputeBuffer(ref _verticesBuffer, _theScene.vertices, 12);
+        CreateComputeBuffer(ref _normalsBuffer, _theScene.normals, 12);
+        CreateComputeBuffer(ref _uv0sBuffer, _theScene.uv0s, 8);
+
+        // per triangle
+        CreateComputeBuffer(ref _trianglesBuffer, _theScene.triangles, 12);
+        CreateComputeBuffer(ref _materialIndexersBuffer, _theScene.materialIndexers, 8);
+
+        // materials
+        CreateComputeBuffer(ref _matDiffusesBuffer, MaterialTable.diffuses, 20);
     }
 
     private void OnDestroy()
@@ -68,6 +103,15 @@ public class TracerBehaviour : MonoBehaviour
         _nodesBuffer?.Release();
         _woopTrisBuffer?.Release();
         _triIndicesBuffer?.Release();
+
+        _verticesBuffer?.Release();
+        _normalsBuffer?.Release();
+        _triIndicesBuffer?.Release();
+
+        _trianglesBuffer?.Release();
+        _materialIndexersBuffer?.Release();
+
+        _matDiffusesBuffer?.Release();
     }
 
     // Update is called once per frame
@@ -81,7 +125,7 @@ public class TracerBehaviour : MonoBehaviour
         }
     }
 
-    private static void CreateComputeBuffer<T>(ref ComputeBuffer buffer, List<T> data, int stride)
+    public static void CreateComputeBuffer<T>(ref ComputeBuffer buffer, List<T> data, int stride)
     where T : struct
     {
         // Do we already have a compute buffer?
@@ -111,7 +155,6 @@ public class TracerBehaviour : MonoBehaviour
 
     private void SetComputeBuffer(string name, ComputeBuffer buffer)
     {
-        //  当buffer因为出错为null的时候，为什么也能正确渲染。。。。。。。。。
         if (buffer != null)
         {
             tracingShader.SetBuffer(0, name, buffer);
@@ -124,13 +167,35 @@ public class TracerBehaviour : MonoBehaviour
         tracingShader.SetInt("_SPPS", spps);
         tracingShader.SetTexture(0, "_SkyboxTexture", skyboxTex);
         tracingShader.SetFloat("_Seed", Random.value);
+        
+
+        for (int i = 0; i < _theScene.diffuseTextures.Count; i++)
+        {
+            tracingShader.SetTexture(0, string.Format("_Texture{0}", i), _theScene.diffuseTextures[i]);
+        }
 
         Vector3 l = sun.transform.forward;
         tracingShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, sun.intensity));
 
+        // bvh data
         SetComputeBuffer("_BVHNodes", _nodesBuffer);
         SetComputeBuffer("_BVHWoopTris", _woopTrisBuffer);
         SetComputeBuffer("_BVHTriIndices", _triIndicesBuffer);
+
+        // scene raw data
+        // per vertex
+        SetComputeBuffer("_Vertices", _verticesBuffer);
+        SetComputeBuffer("_Normals", _normalsBuffer);
+        SetComputeBuffer("_UV0s", _uv0sBuffer);
+
+        // per triangle
+        SetComputeBuffer("_Triangles", _trianglesBuffer);
+        SetComputeBuffer("_MaterialIndexers", _materialIndexersBuffer);
+
+        // materials
+        SetComputeBuffer("_MatDiffuses", _matDiffusesBuffer);
+
+        tracingShader.SetTexture(0, "_DiffuseTextures", _diffuseTextures);
     }
 
     private void InitRenderTexture()
