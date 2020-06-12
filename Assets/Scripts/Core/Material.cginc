@@ -2,24 +2,60 @@
 #define MATERIAL_H
 
 #include "Assets/Scripts/Core/Interaction.cginc"
-#include "Assets/Scripts/Materials/MatDiffuse.cginc"
+struct MatUber {
+    float3 diffColor;
+    int diffTexIdx;
+    float diffExtra;	// Lambertian or OrenNayar or DisneyDiffuse?
 
-#define MAT_DIFFUSE 0
-#define MAT_MIRROR	1
+    float metallic;
+    int matallicTexIdx;
 
-struct MaterialIndexer {
-	int typeID;
-	int index;
+    float ior;   // Index of refraction.
+    int iorTexIdx;
+
+    float roughness;
+    int roughnessTexIdx;
+
+    float specTint;
+    int specTintTexIdx;
+
+    float anisotropic;
+    int anisotropicTexIdx;
+
+    float sheen;
+    int sheenTexIdx;
+    float sheenTint;
+    int sheenTintTexIdx;
+
+    float clearcoat;
+    int clearcoatTexIdx;
+    float ccoatGloss;
+    int ccoatGlossTexIdx;
+
+    float specTrans;
+    int specTransTexIdx;
+
+    float3 scatterDistance;
+    int scatterDistanceTexIdx;
+
+    int thin;
+
+    float flatness;
+    int flatnessTexIdx;
+
+    float diffTrans;
+    int diffTransTexIdx;
+
+    float bump;
+    int bumpTexIdx;
 };
 
-void CreateMaterial(MaterialIndexer indexer) {
-	if (indexer.typeID == (int)MAT_DIFFUSE) {
-
-	}
-}
+StructuredBuffer<MatUber> _MatUbers;
 
 void ComputeShadingData(inout Interaction hit) {
 
 }
+
+
 
 #endif

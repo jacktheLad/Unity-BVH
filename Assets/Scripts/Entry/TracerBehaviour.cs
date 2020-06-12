@@ -34,10 +34,7 @@ public class TracerBehaviour : MonoBehaviour
 
     // per triangle
     private ComputeBuffer _trianglesBuffer;
-    private ComputeBuffer _materialIndexersBuffer;
-
-    // materials
-    private ComputeBuffer _matDiffusesBuffer;
+    private ComputeBuffer _materialsBuffer;
 
     // textures
     private Texture2DArray _diffuseTextures;
@@ -92,10 +89,7 @@ public class TracerBehaviour : MonoBehaviour
 
         // per triangle
         CreateComputeBuffer(ref _trianglesBuffer, _theScene.triangles, 12);
-        CreateComputeBuffer(ref _materialIndexersBuffer, _theScene.materialIndexers, 8);
-
-        // materials
-        CreateComputeBuffer(ref _matDiffusesBuffer, MaterialTable.diffuses, 20);
+        CreateComputeBuffer(ref _materialsBuffer, _theScene.materials, 144);
     }
 
     private void OnDestroy()
@@ -109,9 +103,7 @@ public class TracerBehaviour : MonoBehaviour
         _triIndicesBuffer?.Release();
 
         _trianglesBuffer?.Release();
-        _materialIndexersBuffer?.Release();
-
-        _matDiffusesBuffer?.Release();
+        _materialsBuffer?.Release();
     }
 
     // Update is called once per frame
@@ -190,10 +182,7 @@ public class TracerBehaviour : MonoBehaviour
 
         // per triangle
         SetComputeBuffer("_Triangles", _trianglesBuffer);
-        SetComputeBuffer("_MaterialIndexers", _materialIndexersBuffer);
-
-        // materials
-        SetComputeBuffer("_MatDiffuses", _matDiffusesBuffer);
+        SetComputeBuffer("_MatUbers", _materialsBuffer);
 
         tracingShader.SetTexture(0, "_DiffuseTextures", _diffuseTextures);
     }
@@ -216,7 +205,7 @@ public class TracerBehaviour : MonoBehaviour
             _target.Create();
             _converged = new RenderTexture(Screen.width, Screen.height, 0,
                 RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-            _converged.enableRandomWrite = true;
+            //_converged.enableRandomWrite = true;
             _converged.Create();
 
             // Reset sampling

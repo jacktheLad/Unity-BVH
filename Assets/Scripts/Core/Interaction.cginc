@@ -20,12 +20,33 @@ Interaction CreateInteraction()
     hit.position = float3(0.0f, 0.0f, 0.0f);
     hit.distance = INFINITY;
     hit.normal = float3(0.0f, 0.0f, 0.0f);
+    hit.triIdx = -1;
+
     hit.albedo = float3(0.0f, 0.0f, 0.0f);
     hit.specular = float3(0.0f, 0.0f, 0.0f);
     hit.smoothness = 0.0f;
     hit.emission = float3(0.0f, 0.0f, 0.0f);
-    hit.triIdx = -1;
+
     return hit;
+}
+
+Interaction CreateInteraction(Ray ray, float hitDist, float3 triNormal, int hitTriIdx) {
+    Interaction hit;
+    hit.position = ray.origin + hitDist * ray.direction;
+    hit.distance = hitDist;
+    hit.normal = normalize(triNormal);
+    hit.triIdx = hitTriIdx;
+
+    hit.albedo = float3(0.0f, 0.0f, 0.0f);
+    hit.specular = float3(0.0f, 0.0f, 0.0f);
+    hit.smoothness = 0.0f;
+    hit.emission = float3(0.0f, 0.0f, 0.0f);
+
+    return hit;
+}
+
+void ComputeScatteringFunctions() {
+
 }
 
 #endif

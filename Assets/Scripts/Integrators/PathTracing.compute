@@ -6,8 +6,6 @@
 #include "Assets/Scripts/Core/Interaction.cginc"
 #include "Assets/Scripts/BVH/SBVH/SBVHTraversal.cginc"
 
-#include "Assets/Scripts/Materials/MatDiffuse.cginc"
-
 #pragma exclude_renderers d3d9
 #pragma exclude_renderers d3d11_9x
 
@@ -18,11 +16,11 @@ RWTexture2D<float4> Result;
 int _SPPS;
 float4 _DirectionalLight;
 
-Texture2D<float4> _SkyboxTexture;
-SamplerState sampler_SkyboxTexture;
+
 
 SamplerState _LINEARCLAMP;
 
+#define MAX_BOUNCES 8
 
 //-------------------------------------
 //- SHADE
@@ -35,97 +33,78 @@ float SmoothnessToPhongAlpha(float s)
 float3 Shade(inout Ray ray, Interaction hit)
 {
     // 除非碰到光源，否则路径都在算能量损失，目前而言，光源有且只有天空盒
-    if (hit.distance < INFINITY)
+
+    // Calculate chances of diffuse and specular reflection
+    hit.albedo = min(1.0f - hit.specular, hit.albedo);
+    float specChance = energy(hit.specular);
+    float diffChance = energy(hit.albedo);
+
+    // Roulette-select the ray's path
+    float roulette = rand();
+    if (roulette < specChance)
     {
-
-        // Calculate chances of diffuse and specular reflection
-        hit.albedo = min(1.0f - hit.specular, hit.albedo);
-        float specChance = energy(hit.specular);
-        float diffChance = energy(hit.albedo);
-
-        // Roulette-select the ray's path
-        float roulette = rand();
-        if (roulette < specChance)
-        {
-            // Specular reflection
-            ray.origin = hit.position + hit.normal * 0.001f;
-            float alpha = SmoothnessToPhongAlpha(hit.smoothness);
-            ray.direction = SampleHemisphere(reflect(ray.direction, hit.normal), alpha);
-            float f = (alpha + 2) / (alpha + 1);
-            ray.energy *= (1.0f / specChance) * hit.specular * sdot(hit.normal, ray.direction, f);
-        }
-        else if (diffChance > 0 && roulette < specChance + diffChance)
-        {
-            // Diffuse reflection
-            ray.origin = hit.position + hit.normal * 0.001f;
-            ray.direction = SampleHemisphere(hit.normal, 1.0f);
-            ray.energy *= (1.0f / diffChance) * hit.albedo;
-        }
-        else
-        {
-            // Terminate ray
-            ray.energy = 0.0f;
-        }
-
-        return hit.emission;
+        // Specular reflection
+        ray.origin = hit.position + hit.normal * 0.001f;
+        float alpha = SmoothnessToPhongAlpha(hit.smoothness);
+        ray.direction = SampleHemisphere(reflect(ray.direction, hit.normal), alpha);
+        float f = (alpha + 2) / (alpha + 1);
+        ray.energy *= (1.0f / specChance) * hit.specular * sdot(hit.normal, ray.direction, f);
+    }
+    else if (diffChance > 0 && roulette < specChance + diffChance)
+    {
+        // Diffuse reflection
+        ray.origin = hit.position + hit.normal * 0.001f;
+        ray.direction = SampleHemisphere(hit.normal, 1.0f);
+        ray.energy *= (1.0f / diffChance) * hit.albedo;
     }
     else
     {
-        // Erase the ray's energy - the sky doesn't reflect anything
+        // Terminate ray
         ray.energy = 0.0f;
-
-        // Sample the skybox and write it
-        float theta = acos(ray.direction.y) / -PI;
-        float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
-
-        return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz;
     }
+
+    return hit.emission;
+
 }
 
-void test1(inout Interaction hit, Ray ray, float hitDist, float3 triNormal, int hitTriIdx) {
+void test1(inout Interaction hit, int hitTriIdx) {
+    // baricentric interpolation
+    int3 hitTriangle = _Triangles[hitTriIdx];
+    float3 p0 = _Vertices[hitTriangle.x];
+    float3 p1 = _Vertices[hitTriangle.y];
+    float3 p2 = _Vertices[hitTriangle.z];
+    float3 p = hit.position;
 
-    if (hitDist < INFINITY) 
-    {
-        hit.distance = hitDist;
-        hit.position = ray.origin + hitDist * ray.direction;
-        hit.normal = normalize(triNormal);
-        hit.albedo = 0.4f;
-        hit.specular = 0.0f;
-        hit.smoothness = 0.0f;
-        hit.emission = float3(0.0f, 0.0f, 0.0f);
-        hit.triIdx = hitTriIdx;
+    float det = (p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y);
+    float det0 = (p1.y - p2.y) * (p.x - p2.x) + (p2.x - p1.x) * (p.y - p2.y);
+    float det1 = (p2.y - p0.y) * (p.x - p2.x) + (p0.x - p2.x) * (p.y - p2.y);
+    float invDet = 1 / det;
+    float w0 = det0 * invDet;
+    float w1 = det1 * invDet;
+    float w2 = 1 - w0 - w1;
+    // naive arithmetic, costs much more.
+    //float3 p1p0 = p0 - p1;
+    //float3 p1p2 = p2 - p1;
+    //float3 p1p = p - p1;
+    //float w0 = length(cross(p1p, p1p2)) / length(cross(p1p0, p1p2));
+    //float w2 = length(cross(p1p0, p1p)) / length(cross(p1p0, p1p2));
+    //float w1 = 1.0 - w0 - w1;
 
-        // baricentric interpolation
-        int3 hitTriangle = _Triangles[hitTriIdx];
-        float3 p0 = _Vertices[hitTriangle.x];
-        float3 p1 = _Vertices[hitTriangle.y];
-        float3 p2 = _Vertices[hitTriangle.z];
-        float3 p = hit.position;
+    float2 uv = w0 * _UV0s[hitTriangle.x] + w1 * _UV0s[hitTriangle.y] + w2 * _UV0s[hitTriangle.z];
 
-        float det = (p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y);
-        float det0 = (p1.y - p2.y) * (p.x - p2.x) + (p2.x - p1.x) * (p.y - p2.y);
-        float det1 = (p2.y - p0.y) * (p.x - p2.x) + (p0.x - p2.x) * (p.y - p2.y);
-        float invDet = 1 / det;
-        float w0 = det0 * invDet;
-        float w1 = det1 * invDet;
-        float w2 = 1 - w0 - w1;
-        // naive arithmetic, costs much more.
-        //float3 p1p0 = p0 - p1;
-        //float3 p1p2 = p2 - p1;
-        //float3 p1p = p - p1;
-        //float w0 = length(cross(p1p, p1p2)) / length(cross(p1p0, p1p2));
-        //float w2 = length(cross(p1p0, p1p)) / length(cross(p1p0, p1p2));
-        //float w1 = 1.0 - w0 - w1;
+    // get texture
+    MatUber material = _MatUbers[hitTriIdx];
+    hit.albedo = _DiffuseTextures.SampleLevel(sampler_DiffuseTextures, float3(uv, material.diffTexIdx), 0).xyz;
+}
 
-        float2 uv = w0 * _UV0s[hitTriangle.x] + w1 * _UV0s[hitTriangle.y] + w2 * _UV0s[hitTriangle.z];
-
-        // get texture
-        MaterialIndexer matIndexer = _MaterialIndexers[hitTriIdx];
-        if (matIndexer.typeID == (int)MAT_DIFFUSE) {
-            MatDiffuse matDiff = _MatDiffuses[matIndexer.index];
-            hit.albedo = _DiffuseTextures.SampleLevel(sampler_DiffuseTextures, float3(uv, matDiff.diffuseTexID), 0).xyz;
-        }
-    }
+float3 ACESToneMapping(float3 color)
+{
+    const float A = 2.51f;
+    const float B = 0.03f;
+    const float C = 2.43f;
+    const float D = 0.59f;
+    const float E = 0.14f;
+    return (color * (A * color + B)) / (color * (C * color + D) + E);
 }
 
 //-------------------------------------
@@ -141,15 +120,16 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     Result.GetDimensions(width, height);
 
     // Trace and shade the ray
-    float3 result = float3(0, 0, 0);
+    float3 L = float3(0, 0, 0);
 
-    [loop]
+    //[loop]
     for (int spp = 0; spp < _SPPS; spp++)
     {
         Ray ray = CreateCameraRay(id.xy, width, height);
         float3 acc = 0;
-        [unroll(8)]
-        for (int i = 0; i < 8; i++)
+        bool specularBounce = false;
+        //[loop]
+        for (int bounces = 0; bounces < MAX_BOUNCES; bounces++)
         {
             int hitTriIdx;
             float hitDist = INFINITY;
@@ -158,21 +138,40 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
             Trace(ray.origin, ray.direction, hitTriIdx, hitDist, triNormal, anyHit);
 
-            Interaction hit = CreateInteraction();
-            test1(hit, ray, hitDist, triNormal, hitTriIdx);
+            Interaction hit = CreateInteraction(ray, hitDist, triNormal, hitTriIdx);
 
-            //result = normalize(triNormal);
-            //result = float3(hitDist > 100000 ? 0 : 1, 0, 0);
+            if (bounces == 0 || specularBounce) {
+                if (hit.distance < INFINITY) {
+                    L += ray.energy * hit.emission;
+                }
+                else {
+                    L += ray.energy * GetSkyboxColor(ray);
+                }
+            }
+
+            if (hit.distance == INFINITY) break;
+
+            ComputeScatteringFunctions();
+
+            test1(hit, hitTriIdx);
+            //L = normalize(triNormal);
+            //L = float3(hitDist > 100000 ? 0 : 1, 0, 0);
             acc += ray.energy * Shade(ray, hit);
            
             if (!any(ray.energy))
                 break;
         }
-        result += acc / _SPPS;
+        L += acc / _SPPS;
     }
 
-    result = max(0, min(1, result * 8));
-    result = pow(result, 2.2);
+    // radiance clamp
+   // L = max(0, min(1, L * 8));
+
+    // tone mapping
+    L = ACESToneMapping(L);
+
+    // gamma correction
+    L = pow(L, 2.2);
     
-    Result[id.xy] = float4(result, 1);
+    Result[id.xy] = float4(L, 1);
 }

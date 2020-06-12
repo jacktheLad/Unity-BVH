@@ -16,7 +16,7 @@ public class Scene
 
     // per triangle data
     public List<BVHTriangle> triangles = new List<BVHTriangle>();
-    public List<MaterialIndexer> materialIndexers = new List<MaterialIndexer>();
+    public List<MatUber> materials = new List<MatUber>();
 
     // textures, since we use Texture2DArray, support 512x512 only for the moment.
     public List<Texture2D> diffuseTextures = new List<Texture2D>();
@@ -51,7 +51,7 @@ public class Scene
             }
 
             var renderer = mf.GetComponent<Renderer>();
-            var indexer = ParseMaterial(renderer);
+            var material = ParseMaterial(renderer);
    
             var tris = mesh.triangles;
             for (int i = 0; i < tris.Length; i += 3)
@@ -60,7 +60,7 @@ public class Scene
                                             vetexOffset + tris[i + 1],
                                             vetexOffset + tris[i + 2]);
                 triangles.Add(tri);
-                materialIndexers.Add(indexer);
+                materials.Add(material);
             }
 
             vetexOffset += mesh.vertices.Length;
@@ -69,31 +69,26 @@ public class Scene
         builded = true;
     }
 
-    public MaterialIndexer ParseMaterial(Renderer renderer)
+    public MatUber ParseMaterial(Renderer renderer)
     {
-        MaterialIndexer indexer= new MaterialIndexer();
-
         var mat = renderer.sharedMaterial;
         var shaderName = mat.shader.name;
-        if(shaderName.Contains("Diffuse"))
+
+        MatUber uber = new MatUber();
+
+        if (shaderName == MaterialUtils.uberShaderName)
         {
-            MatDiffuse data = new MatDiffuse();
             var c = mat.GetColor("_Color");
-            data.color = new Vector3(c.r, c.g, c.b);
+            uber.diffColor = new Vector3(c.r, c.g, c.b);
 
             var t = mat.GetTexture("_MainTex") as Texture2D;
             Debug.Assert(t.width == 512 && t.height == 512);
             if (!diffuseTextures.Contains(t))diffuseTextures.Add(t);
-            data.diffuseTexIdx = diffuseTextures.IndexOf(t);
-
-            data.sigma = mat.GetFloat("_Sigma");
-
-            MaterialTable.diffuses.Add(data);
-
-            indexer.typeID = (int)MaterialType.MAT_DIFFUSE;
-            indexer.index = MaterialTable.diffuses.Count - 1;
+            uber.diffTexIdx = diffuseTextures.IndexOf(t);
+            
+            uber.diffExtra = mat.GetFloat("_Sigma");
         }
 
-        return indexer;
+        return uber;
     }
 }

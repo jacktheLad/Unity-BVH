@@ -26,7 +26,6 @@ public class GPU_BVHData : MonoBehaviour
         }
     }
 
-    // ZeroFormatter需要无参构造函数
     public GPU_BVHData Generate(CPU_BVHData cpuData)
     {
         nodes = new List<Vector4>();
