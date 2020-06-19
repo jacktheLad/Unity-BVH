@@ -6,6 +6,6 @@
 - [x] SBVH(CPU Build,GPU Traversal)
 - [x] DOF
 - [ ] Need a better random number generator
-- [ ] Texturing
+- [x] Texturing
 </p>
 </details>
