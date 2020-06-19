@@ -62,6 +62,7 @@ public class TracerBehaviour : MonoBehaviour
         }
         else
         {
+            _theScene = new Scene(true);
             Debug.Log("Using cached BVH data.");
         }
 
@@ -71,9 +72,19 @@ public class TracerBehaviour : MonoBehaviour
         {
             var tex = _theScene.diffuseTextures[0];
             _diffuseTextures = new Texture2DArray(tex.width, tex.height, diffuseTexLen, tex.format, true);
+
             for (int i = 0; i < diffuseTexLen; i++)
             {
-                Graphics.CopyTexture(_theScene.diffuseTextures[i], 0, _diffuseTextures, i);
+                try
+                {
+                    Graphics.CopyTexture(_theScene.diffuseTextures[i], 0, _diffuseTextures, i);
+                }
+                catch (System.Exception)
+                {
+                    Debug.LogError(_theScene.diffuseTextures[i].name + " error when copied to TextureArray.");
+                    throw;
+                }
+                    
             }
         }
 

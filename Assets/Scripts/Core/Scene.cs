@@ -82,6 +82,11 @@ public class Scene
             uber.diffColor = new Vector3(c.r, c.g, c.b);
 
             var t = mat.GetTexture("_MainTex") as Texture2D;
+            if (t == null)
+            {
+                Debug.LogError(renderer.gameObject.name + " diffuse texture is not set.");
+                Application.Quit();
+            }
             Debug.Assert(t.width == 512 && t.height == 512);
             if (!diffuseTextures.Contains(t))diffuseTextures.Add(t);
             uber.diffTexIdx = diffuseTextures.IndexOf(t);

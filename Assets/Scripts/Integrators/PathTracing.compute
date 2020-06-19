@@ -63,7 +63,7 @@ float3 Shade(inout Ray ray, Interaction hit)
         ray.energy = 0.0f;
     }
 
-    return hit.emission;
+    return hit.albedo;
 
 }
 
