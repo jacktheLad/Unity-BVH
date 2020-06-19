@@ -71,7 +71,7 @@ public class GPU_BVHData : MonoBehaviour
                     woopTris.Add(_woop[2]);
 
                     triIndices.Add(cpuData.triIndices[j]);
-                    triIndices.Add(0); // 对其索引，好查找
+                    triIndices.Add(0); // 对齐索引，好查找
                     triIndices.Add(0);
                 }
 

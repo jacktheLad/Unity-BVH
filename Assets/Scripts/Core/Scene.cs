@@ -67,6 +67,8 @@ public class Scene
         }
 
         builded = true;
+
+        Debug.Log("Tracer: diffuse textures count:" + diffuseTextures.Count);
     }
 
     public MatUber ParseMaterial(Renderer renderer)
@@ -78,20 +80,18 @@ public class Scene
 
         if (shaderName == MaterialUtils.uberShaderName)
         {
-            var c = mat.GetColor("_Color");
+            var c = mat.GetColor(UspID.diffColor);
             uber.diffColor = new Vector3(c.r, c.g, c.b);
 
-            var t = mat.GetTexture("_MainTex") as Texture2D;
-            if (t == null)
-            {
-                Debug.LogError(renderer.gameObject.name + " diffuse texture is not set.");
-                Application.Quit();
-            }
+            var t = mat.GetTexture(UspID.diffTexIdx) as Texture2D;
+
+            if (t == null)  Debug.LogError(renderer.gameObject.name + " diffuse texture is not set.");
             Debug.Assert(t.width == 512 && t.height == 512);
-            if (!diffuseTextures.Contains(t))diffuseTextures.Add(t);
+
+            if (!diffuseTextures.Contains(t)) diffuseTextures.Add(t);
             uber.diffTexIdx = diffuseTextures.IndexOf(t);
             
-            uber.diffExtra = mat.GetFloat("_Sigma");
+            uber.diffExtra = mat.GetFloat(UspID.diffExtra);
         }
 
         return uber;

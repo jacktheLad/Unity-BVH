@@ -75,16 +75,7 @@ public class TracerBehaviour : MonoBehaviour
 
             for (int i = 0; i < diffuseTexLen; i++)
             {
-                try
-                {
-                    Graphics.CopyTexture(_theScene.diffuseTextures[i], 0, _diffuseTextures, i);
-                }
-                catch (System.Exception)
-                {
-                    Debug.LogError(_theScene.diffuseTextures[i].name + " error when copied to TextureArray.");
-                    throw;
-                }
-                    
+                Graphics.CopyTexture(_theScene.diffuseTextures[i], 0, _diffuseTextures, i);
             }
         }
 
