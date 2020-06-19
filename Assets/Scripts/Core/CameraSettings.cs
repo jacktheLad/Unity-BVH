@@ -17,6 +17,7 @@ public class CameraSettings : MonoBehaviour
     private void Awake()
     {
         _camera = GetComponent<Camera>();
+        _camera.cullingMask = 0;
     }
 
     public void SetData(ComputeShader compute)
