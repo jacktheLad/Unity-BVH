@@ -35,6 +35,7 @@ public class TracerBehaviour : MonoBehaviour
     // per triangle
     private ComputeBuffer _trianglesBuffer;
     private ComputeBuffer _materialsBuffer;
+    private ComputeBuffer _matIdxBuffer;
 
     // textures
     private Texture2DArray _diffuseTextures;
@@ -92,6 +93,7 @@ public class TracerBehaviour : MonoBehaviour
         // per triangle
         CreateComputeBuffer(ref _trianglesBuffer, _theScene.triangles, 12);
         CreateComputeBuffer(ref _materialsBuffer, _theScene.materials, 144);
+        CreateComputeBuffer(ref _matIdxBuffer, _theScene.matIndices, 4);
     }
 
     private void OnDestroy()
@@ -106,6 +108,7 @@ public class TracerBehaviour : MonoBehaviour
 
         _trianglesBuffer?.Release();
         _materialsBuffer?.Release();
+        _matIdxBuffer?.Release();
     }
 
     // Update is called once per frame
@@ -185,6 +188,7 @@ public class TracerBehaviour : MonoBehaviour
         // per triangle
         SetComputeBuffer("_Triangles", _trianglesBuffer);
         SetComputeBuffer("_MatUbers", _materialsBuffer);
+        SetComputeBuffer("_MatIndices", _matIdxBuffer);
 
         tracingShader.SetTexture(0, "_DiffuseTextures", _diffuseTextures);
     }

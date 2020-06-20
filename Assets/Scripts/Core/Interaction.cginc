@@ -12,6 +12,8 @@ struct Interaction
     float smoothness;
     float3 emission;
     int triIdx;
+
+    float2 uv;
 };
 
 Interaction CreateInteraction()
@@ -26,6 +28,7 @@ Interaction CreateInteraction()
     hit.specular = float3(0.0f, 0.0f, 0.0f);
     hit.smoothness = 0.0f;
     hit.emission = float3(0.0f, 0.0f, 0.0f);
+    hit.uv = float2(0.0f, 0.0f);
 
     return hit;
 }
@@ -41,11 +44,14 @@ Interaction CreateInteraction(Ray ray, float hitDist, float3 triNormal, int hitT
     hit.specular = float3(0.0f, 0.0f, 0.0f);
     hit.smoothness = 0.0f;
     hit.emission = float3(0.0f, 0.0f, 0.0f);
+    hit.uv = float2(0.0f, 0.0f);
 
     return hit;
 }
 
-void ComputeScatteringFunctions() {
+void ComputeScatteringFunctions(inout Ray ray, inout Interaction hit) {
+
+    //ComputeDifferentials(ray); //TODO£∫π‚œﬂŒ¢∑÷
 
 }
 

@@ -17,6 +17,7 @@ public class Scene
     // per triangle data
     public List<BVHTriangle> triangles = new List<BVHTriangle>();
     public List<MatUber> materials = new List<MatUber>();
+    public List<int> matIndices = new List<int>();
 
     // textures, since we use Texture2DArray, support 512x512 only for the moment.
     public List<Texture2D> diffuseTextures = new List<Texture2D>();
@@ -52,7 +53,9 @@ public class Scene
 
             var renderer = mf.GetComponent<Renderer>();
             var material = ParseMaterial(renderer);
-   
+            materials.Add(material);
+            var matIdx = materials.Count - 1;
+
             var tris = mesh.triangles;
             for (int i = 0; i < tris.Length; i += 3)
             {
@@ -60,7 +63,7 @@ public class Scene
                                             vetexOffset + tris[i + 1],
                                             vetexOffset + tris[i + 2]);
                 triangles.Add(tri);
-                materials.Add(material);
+                matIndices.Add(matIdx);
             }
 
             vetexOffset += mesh.vertices.Length;

@@ -2,6 +2,7 @@
 #define MATERIAL_H
 
 #include "Assets/Scripts/Core/Interaction.cginc"
+#include "Assets/Scripts/Material/BxDFs.cginc"
 struct MatUber {
     float3 diffColor;
     int diffTexIdx;
@@ -51,6 +52,7 @@ struct MatUber {
 };
 
 StructuredBuffer<MatUber> _MatUbers;
+StructuredBuffer<int> _MatIndices;
 
 void ComputeShadingData(inout Interaction hit) {
 

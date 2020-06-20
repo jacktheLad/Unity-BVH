@@ -67,7 +67,7 @@ float3 Shade(inout Ray ray, Interaction hit)
 
 }
 
-void test1(inout Interaction hit, int hitTriIdx) {
+void CalculateUV(inout Interaction hit, int hitTriIdx) {
     // baricentric interpolation
     int3 hitTriangle = _Triangles[hitTriIdx];
     float3 p0 = _Vertices[hitTriangle.x];
@@ -90,11 +90,11 @@ void test1(inout Interaction hit, int hitTriIdx) {
     //float w2 = length(cross(p1p0, p1p)) / length(cross(p1p0, p1p2));
     //float w1 = 1.0 - w0 - w1;
 
-    float2 uv = w0 * _UV0s[hitTriangle.x] + w1 * _UV0s[hitTriangle.y] + w2 * _UV0s[hitTriangle.z];
+    hit.uv = w0 * _UV0s[hitTriangle.x] + w1 * _UV0s[hitTriangle.y] + w2 * _UV0s[hitTriangle.z];
 
     // get texture
-    MatUber material = _MatUbers[hitTriIdx];
-    hit.albedo = _DiffuseTextures.SampleLevel(sampler_DiffuseTextures, float3(uv, material.diffTexIdx), 0).xyz;
+    MatUber material = _MatUbers[_MatIndices[hitTriIdx]];
+    hit.albedo = _DiffuseTextures.SampleLevel(sampler_DiffuseTextures, float3(hit.uv, material.diffTexIdx), 0).xyz;
 }
 
 float3 ACESToneMapping(float3 color)
@@ -119,15 +119,17 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     uint width, height;
     Result.GetDimensions(width, height);
 
-    // Trace and shade the ray
     float3 L = float3(0, 0, 0);
 
     //[loop]
     for (int spp = 0; spp < _SPPS; spp++)
     {
         Ray ray = CreateCameraRay(id.xy, width, height);
-        float3 acc = 0;
+        float3 acc = float3(0, 0, 0);
         bool specularBounce = false;
+
+        float raa[3];
+
         //[loop]
         for (int bounces = 0; bounces < MAX_BOUNCES; bounces++)
         {
@@ -142,20 +144,25 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
             if (bounces == 0 || specularBounce) {
                 if (hit.distance < INFINITY) {
-                    L += ray.energy * hit.emission;
+                    acc += ray.energy * hit.emission;
                 }
                 else {
-                    L += ray.energy * GetSkyboxColor(ray);
+                    acc += ray.energy * GetSkyboxColor(ray);
                 }
             }
 
             if (hit.distance == INFINITY) break;
 
-            ComputeScatteringFunctions();
+            CalculateUV(hit, hitTriIdx);
+            ComputeScatteringFunctions(ray, hit);
 
-            test1(hit, hitTriIdx);
-            //L = normalize(triNormal);
-            //L = float3(hitDist > 100000 ? 0 : 1, 0, 0);
+            if (!specularBounce) {
+                // float3 Ld = ray.energy * UniformSampleOneLight(hit);
+                // L += Ld;
+            }
+
+
+
             acc += ray.energy * Shade(ray, hit);
            
             if (!any(ray.energy))
