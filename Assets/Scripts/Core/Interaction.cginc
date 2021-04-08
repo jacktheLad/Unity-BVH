@@ -51,7 +51,7 @@ Interaction CreateInteraction(Ray ray, float hitDist, float3 triNormal, int hitT
 
 void ComputeScatteringFunctions(inout Ray ray, inout Interaction hit) {
 
-    //ComputeDifferentials(ray); //TODO£º¹âÏßÎ¢·Ö
+    //ComputeDifferentials(ray); //TODOï¼šå…‰çº¿å¾®åˆ†
 
 }
 

@@ -94,7 +94,10 @@ void CalculateUV(inout Interaction hit, int hitTriIdx) {
 
     // get texture
     MatUber material = _MatUbers[_MatIndices[hitTriIdx]];
-    hit.albedo = _DiffuseTextures.SampleLevel(sampler_DiffuseTextures, float3(hit.uv, material.diffTexIdx), 0).xyz;
+    if(material.diffTexIdx != -1)
+        hit.albedo = _DiffuseTextures.SampleLevel(sampler_DiffuseTextures, float3(hit.uv, material.diffTexIdx), 0).xyz;
+    else
+        hit.albedo = material.diffColor;
 }
 
 float3 ACESToneMapping(float3 color)
